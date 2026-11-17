@@ -1,0 +1,81 @@
+:root {
+	color-scheme: dark;
+
+	--bg: #0d0f12;
+	--surface: #171a1f;
+	--surface-2: #20242b;
+	--border: #2d323a;
+	--text: #e8eaed;
+	--text-dim: #9aa1ab;
+
+	--accent: #4c9dff;
+	--ok: #3ecf7a;
+	--warn: #f0b429;
+	--danger: #ff4d4f;
+	--rec: #e5252a;
+	--rec-tint: rgb(229 37 42 / 0.12);
+
+	--radius: 12px;
+	--radius-sm: 8px;
+	--gap: 12px;
+	--pad: 16px;
+	--touch: 48px;
+
+	--font: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+	--mono: ui-monospace, 'SF Mono', 'Cascadia Mono', 'Roboto Mono', monospace;
+}
+
+*,
+*::before,
+*::after {
+	box-sizing: border-box;
+}
+
+html,
+body {
+	margin: 0;
+	background: var(--bg);
+	color: var(--text);
+	font-family: var(--font);
+	font-size: 16px;
+	line-height: 1.4;
+	/* No pull-to-refresh: a reload drops the Bluetooth link. */
+	overscroll-behavior: none;
+}
+
+button {
+	font: inherit;
+	min-height: var(--touch);
+	padding: 0 20px;
+	border-radius: var(--radius-sm);
+	border: 1px solid var(--border);
+	background: var(--surface-2);
+	color: var(--text);
+	cursor: pointer;
+	touch-action: manipulation;
+}
+
+button:disabled {
+	opacity: 0.5;
+	cursor: default;
+}
+
+button.primary {
+	background: var(--accent);
+	border-color: var(--accent);
+	color: #fff;
+	font-weight: 600;
+}
+
+button:focus-visible {
+	outline: 2px solid var(--accent);
+	outline-offset: 2px;
+}
+
+code {
+	font-family: var(--mono);
+	font-size: 0.9em;
+	background: var(--surface-2);
+	padding: 1px 5px;
+	border-radius: 4px;
+}
