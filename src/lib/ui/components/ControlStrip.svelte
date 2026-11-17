@@ -92,6 +92,7 @@
 	</div>
 {/snippet}
 
+<div class="strip-box">
 <section class="strip" aria-label="Camera controls">
 	<button
 		class="af"
@@ -117,12 +118,13 @@
 		>
 			<span class="tile-label"><Icon name={t.icon} size={18} />{t.label}</span>
 			<span class="tile-value">{t.value}</span>
-			<span class="tile-sub {t.mark ?? ''}">
-				{t.block ? blockText(t.block) : t.mark ? MARK_TEXT[t.mark] : ' '}
-			</span>
+			{#if t.block || t.mark}
+				<span class="tile-sub {t.mark ?? ''}">{t.block ? blockText(t.block) : t.mark ? MARK_TEXT[t.mark] : ''}</span>
+			{/if}
 		</button>
 	{/each}
 </section>
+</div>
 
 {#if open && current}
 	<button class="scrim" aria-label="Close" tabindex="-1" onclick={() => (open = null)}></button>
@@ -247,6 +249,10 @@
 {/if}
 
 <style>
+	.strip-box {
+		width: 100%;
+		container-type: inline-size;
+	}
 	.strip {
 		display: grid;
 		/* Phones: three tiles, then two wider ones. Wider screens: one row of five. */
@@ -480,7 +486,7 @@
 		font-size: 0.75rem;
 		font-weight: 400;
 	}
-	@media (min-width: 560px) {
+	@container (min-width: 560px) {
 		/* One row: autofocus, then the five tiles. */
 		.af,
 		.tile,
@@ -495,6 +501,15 @@
 		}
 		.af-text {
 			align-items: center;
+		}
+	}
+	@media (max-height: 699px) {
+		.af {
+			min-height: 52px;
+		}
+		.tile {
+			min-height: 56px;
+			padding: 6px 10px;
 		}
 	}
 </style>

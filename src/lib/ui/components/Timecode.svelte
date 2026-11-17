@@ -11,7 +11,8 @@
 <style>
 	.tc {
 		font-family: var(--mono);
-		font-size: clamp(2rem, 11vw, 3.5rem);
+		font-size: clamp(1.6rem, min(11vw, 9dvh), 3.5rem);
+		line-height: 1.1;
 		font-variant-numeric: tabular-nums;
 		text-align: center;
 		letter-spacing: 0.02em;

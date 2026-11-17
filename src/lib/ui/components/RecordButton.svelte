@@ -86,11 +86,27 @@
 		align-items: center;
 		gap: 10px;
 	}
+	.record {
+		/* The button gives way first when the window is small, but stays the largest target. */
+		--rec-size: clamp(6rem, min(60vw, 26dvh), 16rem);
+	}
+	@media (min-width: 600px) {
+		/* The controls take one row here, or sit beside the button on a short window. */
+		.record {
+			--rec-size: clamp(6rem, min(60vw, 36dvh), 16rem);
+		}
+	}
+	@media (max-height: 599px) and (max-width: 599px) {
+		.record {
+			--rec-size: clamp(5.5rem, min(60vw, 19dvh), 16rem);
+		}
+	}
 	.main {
-		width: min(16rem, 70vw);
-		height: min(16rem, 70vw);
+		width: var(--rec-size);
+		height: var(--rec-size);
+		flex: none;
 		border-radius: 50%;
-		font-size: 1.6rem;
+		font-size: clamp(1.05rem, calc(var(--rec-size) / 9), 1.6rem);
 		font-weight: 700;
 		letter-spacing: 0.08em;
 		display: flex;
@@ -105,6 +121,7 @@
 		height: 18px;
 		border-radius: 50%;
 		background: var(--rec);
+		flex: none;
 	}
 	.main.recording {
 		background: var(--rec);
@@ -173,5 +190,12 @@
 	.small {
 		min-height: var(--touch);
 		padding: 0 12px;
+	}
+	@media (max-height: 699px) {
+		/* The button label and the camera bar already say both. */
+		.state,
+		.remaining {
+			display: none;
+		}
 	}
 </style>

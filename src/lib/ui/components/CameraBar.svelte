@@ -17,7 +17,7 @@
 <header class="bar" class:stale={!session.live}>
 	<div class="who">
 		<span class="dot {tone}" aria-hidden="true"></span>
-		<div>
+		<div class="id">
 			<div class="name">{session.name ?? 'Camera'}</div>
 			<div class="sub">{session.syncing ? 'Syncing' : PHASE_LABEL[session.phase]}{s.model ? ` · ${s.model}` : ''}</div>
 		</div>
@@ -46,8 +46,14 @@
 		gap: 10px;
 		min-width: 0;
 	}
+	.id {
+		min-width: 0;
+	}
 	.name {
 		font-weight: 600;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
 	}
 	.sub {
 		font-size: 0.8rem;
@@ -77,6 +83,7 @@
 		color: var(--accent);
 		font-variant-numeric: tabular-nums;
 		white-space: nowrap;
+		flex: none;
 	}
 	.stale .facts {
 		color: var(--text-dim);
