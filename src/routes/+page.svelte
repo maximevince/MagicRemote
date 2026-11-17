@@ -5,6 +5,7 @@
 	import { sessionConfigFromQuery } from '#lib/domain/url-config.ts';
 	import { requestCameraLink, webBluetoothAvailable } from '#lib/transport/web-bluetooth-link.ts';
 	import { detectOs, type Os } from '#lib/platform/detect.ts';
+	import { updates } from '#lib/platform/updates.svelte.ts';
 	import { LINUX_FLAG } from '#lib/ui/messages.ts';
 	import CameraBar from '#lib/ui/components/CameraBar.svelte';
 	import ConnectScreen from '#lib/ui/components/ConnectScreen.svelte';
@@ -36,6 +37,9 @@
 
 	// A reload or navigation drops the Bluetooth link.
 	$effect(() => {
+	// A new app version must not take over while a camera is connected.
+	$effect(() => (connected ? updates.hold('camera connected') : undefined));
+
 		if (!connected) return;
 		const guard = (e: BeforeUnloadEvent) => e.preventDefault();
 		window.addEventListener('beforeunload', guard);

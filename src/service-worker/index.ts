@@ -1,5 +1,5 @@
 // Offline support. Precaches the whole app (it is small and fully prerendered) into a cache named
-// after the build version and serves it cache-first. Update rules (docs/ARCHITECTURE.md §6):
+// after the build version and serves it cache-first. Update rules:
 // a new worker never takes over by itself. It waits until every window is closed, or until the
 // page asks it to (the user pressed "reload" and no camera is connected), see #lib/platform/updates.
 import { self } from '$app/service-worker';

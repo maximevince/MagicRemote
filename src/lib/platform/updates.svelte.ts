@@ -1,9 +1,10 @@
 // Service worker registration and the update prompt.
 //
-// Rules (docs/ARCHITECTURE.md §5.4, §6): a new version never reloads or takes over a live session.
+// Rules: a new version never reloads or takes over a live session.
 // A new worker installs in the background and waits. The page offers "Update available — reload",
 // hidden while anything holds updates (a connected camera), and only on that press does it ask the
 // waiting worker to activate, then reloads once it has taken over.
+import { untrack } from 'svelte';
 import { SW_MESSAGE, isSwReply, type SwRefusal, type SwRequest } from './sw-messages.ts';
 
 /** The parts of the ServiceWorker APIs this module uses, so tests can fake them. */
@@ -78,14 +79,18 @@ export class UpdateController {
 	 */
 	hold(reason: string): () => void {
 		const key = `${reason}#${this.#nextHold++}`;
-		this.#holds = new Set(this.#holds).add(key);
-		this.refused = null;
-		return () => {
-			if (!this.#holds.has(key)) return;
-			const next = new Set(this.#holds);
-			next.delete(key);
-			this.#holds = next;
-		};
+		// Callers hold from an effect; reading the set there must not make that effect depend on it.
+		untrack(() => {
+			this.#holds = new Set(this.#holds).add(key);
+			this.refused = null;
+		});
+		return () =>
+			untrack(() => {
+				if (!this.#holds.has(key)) return;
+				const next = new Set(this.#holds);
+				next.delete(key);
+				this.#holds = next;
+			});
 	}
 
 	async start(deps: UpdateDeps): Promise<void> {
