@@ -120,6 +120,7 @@ export class WebBluetoothLink implements CameraLink {
 		}
 	}
 
+	/** Not `forget()`: that would revoke the page's permission for the device. */
 	async disconnect(): Promise<void> {
 		this.#device.gatt?.disconnect();
 	}

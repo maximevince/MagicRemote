@@ -254,12 +254,14 @@ export class CameraSession {
 
 	/**
 	 * Start a connection. `reuse` keeps the device chosen earlier in this page (no chooser).
-	 * From `bond-stale` this is refused unless the user confirmed the recovery steps
-	 * (`recovered`), which forgets the camera so that it pairs once more.
+	 * From `bond-stale` a plain connect is refused. The user can either `retry`, which tries the
+	 * stored pairing once more and keeps the camera known (so it is still never paired again
+	 * automatically), or confirm the recovery steps (`recovered`), which forgets the camera so
+	 * that it pairs once more.
 	 */
-	async connect(options: { reuse?: boolean; recovered?: boolean } = {}): Promise<void> {
+	async connect(options: { reuse?: boolean; retry?: boolean; recovered?: boolean } = {}): Promise<void> {
 		if (this.#busy || ACTIVE.has(this.phase)) return;
-		if (this.phase === 'bond-stale' && !options.recovered) return;
+		if (this.phase === 'bond-stale' && !options.recovered && !options.retry) return;
 		const run = ++this.#run;
 		this.#busy = true;
 		this.failure = null;
@@ -279,6 +281,8 @@ export class CameraSession {
 			if (options.recovered) {
 				this.#deps.known.forget(this.#key());
 				this.log.add('session', { msg: 'bond recovery confirmed by the user; camera forgotten' });
+			} else if (options.retry) {
+				this.log.add('session', { msg: 'retry with the stored pairing requested by the user' });
 			}
 			this.known = this.#deps.known.has(this.#key());
 			await this.#runInitial(run);
@@ -287,7 +291,12 @@ export class CameraSession {
 		}
 	}
 
-	/** User disconnect (or cancelling a reconnect). Frees the camera for another controller. */
+	/**
+	 * User disconnect (or cancelling a connect or reconnect). Closes this page's GATT connection
+	 * and stops all reconnecting. Whether the computer then drops the Bluetooth link is up to the
+	 * OS: on Linux (BlueZ) it stays up until the browser exits or the camera is disconnected in
+	 * the system Bluetooth settings, so the camera may not be free for another controller yet.
+	 */
 	async disconnect(): Promise<void> {
 		this.#linkUp = false;
 		this.#encrypted = false;

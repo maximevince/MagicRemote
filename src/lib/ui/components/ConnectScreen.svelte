@@ -1,7 +1,14 @@
 <script lang="ts">
 	import type { CameraSession, HandshakeStep } from '#lib/domain/camera-session.svelte.ts';
 	import type { Os } from '#lib/platform/detect.ts';
-	import { failureText, hostBondRemoval, pinHint, STEP_LABEL } from '#lib/ui/messages.ts';
+	import {
+		disconnectNote,
+		failureText,
+		hostBondRemoval,
+		pinHint,
+		staleBondHostCauses,
+		STEP_LABEL
+	} from '#lib/ui/messages.ts';
 
 	let { session, os }: { session: CameraSession; os: Os } = $props();
 
@@ -20,6 +27,8 @@
 	const failure = $derived(session.failure);
 	const text = $derived(failure ? failureText(failure, os) : null);
 	const stepIndex = $derived(session.step ? STEPS.indexOf(session.step) : -1);
+	/** After the user's own Disconnect (or Cancel): no failure attached. */
+	const note = $derived(session.phase === 'disconnected' && !failure ? disconnectNote(os) : null);
 
 	function prepare(options: { reuse: boolean; recovering?: boolean }) {
 		reuse = options.reuse;
@@ -30,6 +39,11 @@
 	/** Runs in the click handler: the chooser needs the user gesture. */
 	function start(reuseDevice: boolean) {
 		void session.connect({ reuse: reuseDevice, recovered: false });
+	}
+
+	/** Tries the stored pairing again; the camera stays known, so nothing pairs on its own. */
+	function retry(reuseDevice: boolean) {
+		void session.connect({ reuse: reuseDevice, retry: true });
 	}
 
 	/** Runs in the click handler: the chooser needs the user gesture. */
@@ -67,15 +81,29 @@
 		<div class="card error">
 			<h2>{text?.title}</h2>
 			<p>{text?.body}</p>
-			<p>To fix it, do both:</p>
+			<p>Try again first. The app does not pair or remove anything when it retries.</p>
+			<div class="actions">
+				<button class="primary" onclick={() => retry(true)}>Try again</button>
+				<button onclick={() => retry(false)}>Choose the camera again</button>
+			</div>
+			<p class="step">If that fails, check this device:</p>
+			<ul>
+				{#each staleBondHostCauses(os) as cause (cause)}
+					<li>{cause}</li>
+				{/each}
+			</ul>
+			<p class="step">
+				Last resort, only if nothing above helped: remove the pairing on both sides, then pair again with
+				a new PIN.
+			</p>
 			<ol>
 				<li>{hostBondRemoval(os)}</li>
-				<li>On the camera: Bluetooth settings, <strong>Clear paired devices</strong>.</li>
-				<li>Then pair once more.</li>
+				<li>
+					On the camera: Bluetooth settings, <strong>Clear paired devices</strong>. This removes every
+					pairing on the camera.
+				</li>
 			</ol>
-			<button class="primary" onclick={() => prepare({ reuse: true, recovering: true })}>
-				I've done both: pair again
-			</button>
+			<button onclick={() => prepare({ reuse: true, recovering: true })}>Removed on both sides: pair again</button>
 		</div>
 	{:else if preparing}
 		<div class="card">
@@ -96,6 +124,12 @@
 			</div>
 		</div>
 	{:else}
+		{#if note}
+			<div class="card" role="status">
+				<h2>Disconnected</h2>
+				<p class="hint">{note}</p>
+			</div>
+		{/if}
 		{#if text && failure?.kind !== 'bond-stale'}
 			<div class="card" class:error={failure?.kind !== 'chooser-cancelled'} role="alert">
 				<h2>{text.title}</h2>
@@ -157,6 +191,13 @@
 		border-color: var(--danger);
 	}
 	.card p {
+		margin: 0 0 12px;
+	}
+	.card p.step {
+		margin-top: 16px;
+	}
+	.card ul,
+	.card ol {
 		margin: 0 0 12px;
 	}
 	.actions {

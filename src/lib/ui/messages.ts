@@ -40,6 +40,39 @@ export function hostBondRemoval(os: Os): string {
 	}
 }
 
+/**
+ * Causes on this device's side for an encryption failure with a stored pairing, cheapest to fix
+ * first. The browser only reports that the secure link failed, not which side lost the key.
+ */
+export function staleBondHostCauses(os: Os): string[] {
+	switch (os) {
+		case 'linux':
+			return [
+				'More than one Bluetooth adapter: the browser may use one that is not paired with the camera. bluetoothctl list shows them. Unplug or disable the extra one, then try again.',
+				`This computer is not paired with the camera yet. Chrome on Linux cannot pair, so pair once outside the browser. ${LINUX_PAIRING}`
+			];
+		case 'chromeos':
+			return ['This Chromebook may no longer hold the pairing, for example after the camera was removed from its Bluetooth settings.'];
+		case 'windows':
+			return ['This computer may no longer hold the pairing, for example after the camera was removed from its Bluetooth settings.'];
+		case 'macos':
+			return ['This Mac may no longer hold the pairing, for example after the camera was removed from its Bluetooth settings.'];
+		case 'android':
+			return ['This phone may no longer hold the pairing, for example after the camera was removed from its Bluetooth settings.'];
+		default:
+			return ['This device may no longer hold the pairing, for example after the camera was removed from its Bluetooth settings.'];
+	}
+}
+
+/**
+ * Shown after the user disconnected. Only where it is known that the OS keeps the Bluetooth link
+ * up after the page lets go (Linux/BlueZ, measured); null elsewhere.
+ */
+export function disconnectNote(os: Os): string | null {
+	if (os !== 'linux') return null;
+	return 'This computer may keep the Bluetooth link to the camera open. The camera takes one controller at a time. To free it for another device, disconnect the camera in the system Bluetooth settings or with bluetoothctl disconnect <camera address>, or quit the browser.';
+}
+
 export const STEP_LABEL: Record<HandshakeStep, string> = {
 	connecting: 'Connecting',
 	identifying: 'Reading camera model',
@@ -62,7 +95,7 @@ export const PHASE_LABEL: Record<SessionPhase, string> = {
 	ready: 'Connected',
 	reconnecting: 'Reconnecting',
 	'pairing-failed': 'Pairing failed',
-	'bond-stale': 'Pairing lost',
+	'bond-stale': 'Secure link failed',
 	failed: 'Connection failed',
 	disconnected: 'Disconnected'
 };
@@ -89,8 +122,8 @@ export function failureText(f: SessionFailure, os: Os): { title: string; body: s
 			return { title: 'Pairing timed out', body: 'The camera gives you about 30 seconds to type the PIN. Get ready, then try again; the camera will show a new PIN.' };
 		case 'bond-stale':
 			return {
-				title: 'This camera no longer accepts our pairing',
-				body: 'The camera and this device disagree about their pairing (for example after "Clear paired devices" on the camera). The app has stopped and will not pair again on its own.'
+				title: 'The stored pairing did not work',
+				body: 'The secure link could not be set up with the stored pairing. The browser does not say why, so the cause can be on this device or on the camera. The app has stopped and will not pair again on its own.'
 			};
 		case 'unexpected':
 			return { title: 'Something went wrong', body: f.detail ?? 'Unknown error.' };

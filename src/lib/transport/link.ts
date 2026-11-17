@@ -34,6 +34,10 @@ export interface CameraLink {
 
 	/** Connect and (re)discover characteristics. Handles from a previous connection are discarded. */
 	connect(): Promise<void>;
+	/**
+	 * Close this page's connection. The OS may keep the Bluetooth link itself open
+	 * (Linux/BlueZ does, until the browser exits).
+	 */
 	disconnect(): Promise<void>;
 
 	read(ch: CharacteristicId): Promise<Uint8Array>;

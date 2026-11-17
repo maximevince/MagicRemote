@@ -420,6 +420,42 @@ describe('CameraSession: link loss and reconnect', () => {
 		expect(h.resyncWrites()).toBe(1);
 	});
 
+	it('lets the user retry the stored pairing from bond-stale without forgetting the camera', async () => {
+		const h = harness({ known: true });
+		h.link.subscribePlan.status = [new LinkError('auth', 'Authentication failed.')];
+		await h.session.connect();
+		expect(h.session.phase).toBe('bond-stale');
+		void h.session.connect({ reuse: true, retry: true });
+		await h.untilPhase('ready');
+		expect(h.requestLink).toHaveBeenCalledTimes(1);
+		expect(h.session.known).toBe(true);
+		expect(h.known.has(KEY)).toBe(true);
+	});
+
+	it('goes back to bond-stale when a retry fails again, still known and never re-paired', async () => {
+		const h = harness({ known: true });
+		const auth = () => new LinkError('auth', 'Authentication failed.');
+		h.link.subscribePlan.status = [auth(), auth()];
+		await h.session.connect();
+		expect(h.session.phase).toBe('bond-stale');
+		await h.session.connect({ reuse: true, retry: true });
+		expect(h.session.phase).toBe('bond-stale');
+		expect(h.link.connectCount).toBe(2);
+		expect(h.known.has(KEY)).toBe(true);
+		await advance(10 * 60_000);
+		expect(h.link.connectCount).toBe(2);
+	});
+
+	it('can retry from bond-stale through the chooser', async () => {
+		const h = harness({ known: true });
+		h.link.subscribePlan.status = [new LinkError('auth', 'Authentication failed.')];
+		await h.session.connect();
+		void h.session.connect({ retry: true });
+		await h.untilPhase('ready');
+		expect(h.requestLink).toHaveBeenCalledTimes(2);
+		expect(h.known.has(KEY)).toBe(true);
+	});
+
 	it('stops after a user disconnect and does not reconnect', async () => {
 		const h = harness();
 		await h.toReady();
