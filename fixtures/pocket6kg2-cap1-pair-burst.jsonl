@@ -1,0 +1,389 @@
+{"t": 0.0064, "kind": "agent", "ev": "registered", "capability": "KeyboardOnly"}
+{"t": 0.2268, "kind": "found", "name": "A:1A2B3C4D"}
+{"t": 1.7178, "kind": "connected", "mtu": 23}
+{"t": 1.9846, "kind": "read", "what": "manufacturer", "value": "Blackmagic Design", "hex": "426c61636b6d616769632044657369676e"}
+{"t": 2.076, "kind": "read", "what": "model", "value": "Pocket Cinema Camera 6K G2", "hex": "506f636b65742043696e656d612043616d65726120364b204732000000000000"}
+{"t": 2.1648, "kind": "read", "what": "protocol", "value": "0.1.0", "hex": "302e312e3000000000000000"}
+{"t": 2.2545, "kind": "out", "what": "device-name", "value": "MagicRemote M0"}
+{"t": 2.2547, "kind": "pairing", "msg": "calling Pair(); camera should show a PIN"}
+{"t": 2.5256, "kind": "agent", "ev": "RequestPasskey", "device": "/org/bluez/hci0/dev_CC_86_EC_00_00_01", "msg": "waiting for ~/magicremote-m0/passkey"}
+{"t": 32.7544, "kind": "disconnected"}
+{"t": 32.7546, "kind": "agent", "ev": "Cancel"}
+{"t": 0.0066, "kind": "agent", "ev": "registered", "capability": "KeyboardOnly"}
+{"t": 30.1242, "kind": "error", "msg": "camera not found while scanning (connected elsewhere, off, or out of range?)"}
+{"t": 0.0067, "kind": "agent", "ev": "registered", "capability": "KeyboardOnly"}
+{"t": 0.5899, "kind": "found", "name": "A:1A2B3C4D"}
+{"t": 0.0067, "kind": "agent", "ev": "registered", "capability": "KeyboardOnly"}
+{"t": 0.6939, "kind": "found", "name": "A:1A2B3C4D"}
+{"t": 0.6995, "kind": "connect-retry", "attempt": 1, "err": "BleakDBusError('org.bluez.Error.InProgress', 'In Progress')"}
+{"t": 3.7058, "kind": "connect-retry", "attempt": 2, "err": "BleakDBusError('org.bluez.Error.InProgress', 'In Progress')"}
+{"t": 6.7086, "kind": "connect-retry", "attempt": 3, "err": "BleakDBusError('org.bluez.Error.InProgress', 'In Progress')"}
+{"t": 9.7146, "kind": "connect-retry", "attempt": 4, "err": "BleakDBusError('org.bluez.Error.InProgress', 'In Progress')"}
+{"t": 12.7205, "kind": "connect-retry", "attempt": 5, "err": "BleakDBusError('org.bluez.Error.InProgress', 'In Progress')"}
+{"t": 15.7238, "kind": "connect-retry", "attempt": 6, "err": "BleakDBusError('org.bluez.Error.InProgress', 'In Progress')"}
+{"t": 18.7275, "kind": "error", "msg": "could not connect"}
+{"t": 0.0069, "kind": "agent", "ev": "registered", "capability": "KeyboardOnly"}
+{"t": 1.1627, "kind": "found", "name": "A:1A2B3C4D"}
+{"t": 0.0068, "kind": "agent", "ev": "registered", "capability": "KeyboardOnly"}
+{"t": 0.1703, "kind": "found", "name": "A:1A2B3C4D"}
+{"t": 1.3211, "kind": "connected", "mtu": 23}
+{"t": 1.446, "kind": "read", "what": "manufacturer", "value": "Blackmagic Design", "hex": "426c61636b6d616769632044657369676e"}
+{"t": 1.581, "kind": "read", "what": "model", "value": "Pocket Cinema Camera 6K G2", "hex": "506f636b65742043696e656d612043616d65726120364b204732000000000000"}
+{"t": 1.7163, "kind": "read", "what": "protocol", "value": "0.1.0", "hex": "302e312e3000000000000000"}
+{"t": 1.851, "kind": "out", "what": "device-name", "value": "MagicRemote M0"}
+{"t": 1.8511, "kind": "pairing", "msg": "calling Pair(); camera should show a PIN"}
+{"t": 2.1672, "kind": "agent", "ev": "RequestPasskey", "device": "/org/bluez/hci0/dev_CC_86_EC_00_00_01", "msg": "waiting for ~/magicremote-m0/passkey"}
+{"t": 0.007, "kind": "agent", "ev": "registered", "capability": "KeyboardOnly"}
+{"t": 0.1848, "kind": "found", "name": "A:1A2B3C4D"}
+{"t": 1.0197, "kind": "connected", "mtu": 23}
+{"t": 1.0991, "kind": "read", "what": "manufacturer", "value": "Blackmagic Design", "hex": "426c61636b6d616769632044657369676e"}
+{"t": 1.1889, "kind": "read", "what": "model", "value": "Pocket Cinema Camera 6K G2", "hex": "506f636b65742043696e656d612043616d65726120364b204732000000000000"}
+{"t": 1.2788, "kind": "read", "what": "protocol", "value": "0.1.0", "hex": "302e312e3000000000000000"}
+{"t": 1.3673, "kind": "out", "what": "device-name", "value": "MagicRemote M0"}
+{"t": 1.3674, "kind": "pairing", "msg": "calling Pair(); camera should show a PIN"}
+{"t": 1.6398, "kind": "agent", "ev": "RequestPasskey", "device": "/org/bluez/hci0/dev_CC_86_EC_00_00_01", "msg": "waiting for ~/magicremote-m0/passkey"}
+{"t": 18.0431, "kind": "agent", "ev": "PasskeyProvided"}
+{"t": 22.3001, "kind": "paired"}
+{"t": 22.3776, "kind": "subscribed", "ch": "status", "took": 0.077}
+{"t": 22.5579, "kind": "subscribed", "ch": "incoming", "took": 0.18}
+{"t": 22.6479, "kind": "subscribed", "ch": "timecode", "took": 0.09}
+{"t": 24.2747, "kind": "in", "ch": "incoming", "len": 14, "hex": "ff0a00000a010102000010000103", "packets": [{"id": "10.1", "type": "int8", "op": 2, "values": [0, 0, 16, 0, 1, 3]}], "rest": null}
+{"t": 24.4014, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030016152407", "tc": "07:24:15:16"}
+{"t": 24.4467, "kind": "in", "ch": "incoming", "len": 10, "hex": "ff060000030002020100", "packets": [{"id": "3.0", "type": "int16", "op": 2, "values": [1]}], "rest": null}
+{"t": 24.447, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030018152407", "tc": "07:24:15:18"}
+{"t": 24.5362, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030020152407", "tc": "07:24:15:20"}
+{"t": 24.5811, "kind": "in", "ch": "incoming", "len": 10, "hex": "ff0600000c0002020700", "packets": [{"id": "12.0", "type": "int16", "op": 2, "values": [7]}], "rest": null}
+{"t": 24.6274, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030022152407", "tc": "07:24:15:22"}
+{"t": 24.6717, "kind": "in", "ch": "incoming", "len": 9, "hex": "ff0500000c02050231", "packets": [{"id": "12.2", "type": "string", "op": 2, "values": "1"}], "rest": null}
+{"t": 24.7163, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030000162407", "tc": "07:24:16:00"}
+{"t": 24.7614, "kind": "in", "ch": "incoming", "len": 11, "hex": "ff0700000c010102ff0101", "packets": [{"id": "12.1", "type": "int8", "op": 2, "values": [-1, 1, 1]}], "rest": null}
+{"t": 24.7616, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030002162407", "tc": "07:24:16:02"}
+{"t": 24.8517, "kind": "in", "ch": "incoming", "len": 10, "hex": "ff0600000c03010263ff", "packets": [{"id": "12.3", "type": "int8", "op": 2, "values": [99, -1]}], "rest": null}
+{"t": 24.8962, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030004162407", "tc": "07:24:16:04"}
+{"t": 24.9425, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030006162407", "tc": "07:24:16:06"}
+{"t": 24.9865, "kind": "in", "ch": "incoming", "len": 9, "hex": "ff0500000c04000200", "packets": [{"id": "12.4", "type": "void", "op": 2, "values": [0]}], "rest": null}
+{"t": 25.032, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030008162407", "tc": "07:24:16:08"}
+{"t": 25.1216, "kind": "in", "ch": "incoming", "len": 9, "hex": "ff0500000c05050241", "packets": [{"id": "12.5", "type": "string", "op": 2, "values": "A"}], "rest": null}
+{"t": 25.1218, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030010162407", "tc": "07:24:16:10"}
+{"t": 25.2114, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030011162407", "tc": "07:24:16:11"}
+{"t": 25.2565, "kind": "in", "ch": "incoming", "len": 8, "hex": "ff0400000c060502", "packets": [{"id": "12.6", "type": "string", "op": 2, "values": ""}], "rest": null}
+{"t": 25.3014, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030013162407", "tc": "07:24:16:13"}
+{"t": 25.3016, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030015162407", "tc": "07:24:16:15"}
+{"t": 25.3915, "kind": "in", "ch": "incoming", "len": 8, "hex": "ff0400000c070502", "packets": [{"id": "12.7", "type": "string", "op": 2, "values": ""}], "rest": null}
+{"t": 25.4374, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030017162407", "tc": "07:24:16:17"}
+{"t": 25.4817, "kind": "in", "ch": "incoming", "len": 8, "hex": "ff0400000c080502", "packets": [{"id": "12.8", "type": "string", "op": 2, "values": ""}], "rest": null}
+{"t": 25.4819, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030019162407", "tc": "07:24:16:19"}
+{"t": 25.5727, "kind": "in", "ch": "incoming", "len": 37, "hex": "ff2100000c0905025369676d612032342d37306d6d20662f322e38204447204f532048534d", "packets": [{"id": "12.9", "type": "string", "op": 2, "values": "Sigma 24-70mm f/2.8 DG OS HSM"}], "rest": null}
+{"t": 25.6163, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030021162407", "tc": "07:24:16:21"}
+{"t": 25.6635, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030023162407", "tc": "07:24:16:23"}
+{"t": 25.7067, "kind": "in", "ch": "incoming", "len": 12, "hex": "ff0800000c0a050266342e32", "packets": [{"id": "12.10", "type": "string", "op": 2, "values": "f4.2"}], "rest": null}
+{"t": 25.7521, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030001172407", "tc": "07:24:17:01"}
+{"t": 25.7967, "kind": "in", "ch": "incoming", "len": 12, "hex": "ff0800000c0b050232346d6d", "packets": [{"id": "12.11", "type": "string", "op": 2, "values": "24mm"}], "rest": null}
+{"t": 25.8417, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030003172407", "tc": "07:24:17:03"}
+{"t": 25.8867, "kind": "in", "ch": "incoming", "len": 24, "hex": "ff1400000c0c0502313330306d6d20746f20313433306d6d", "packets": [{"id": "12.12", "type": "string", "op": 2, "values": "1300mm to 1430mm"}], "rest": null}
+{"t": 25.9325, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030005172407", "tc": "07:24:17:05"}
+{"t": 25.9764, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030007172407", "tc": "07:24:17:07"}
+{"t": 26.0214, "kind": "in", "ch": "incoming", "len": 8, "hex": "ff0400000c0d0502", "packets": [{"id": "12.13", "type": "string", "op": 2, "values": ""}], "rest": null}
+{"t": 26.0673, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030009172407", "tc": "07:24:17:09"}
+{"t": 26.1115, "kind": "in", "ch": "incoming", "len": 9, "hex": "ff0500000c0e010200", "packets": [{"id": "12.14", "type": "int8", "op": 2, "values": [0]}], "rest": null}
+{"t": 26.1565, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030010172407", "tc": "07:24:17:10"}
+{"t": 26.2027, "kind": "in", "ch": "incoming", "len": 17, "hex": "ff0d00000c0f05024e65787420436c6970", "packets": [{"id": "12.15", "type": "string", "op": 2, "values": "Next Clip"}], "rest": null}
+{"t": 26.2031, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030012172407", "tc": "07:24:17:12"}
+{"t": 26.3365, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030014172407", "tc": "07:24:17:14"}
+{"t": 26.3814, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030016172407", "tc": "07:24:17:16"}
+{"t": 26.4728, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030018172407", "tc": "07:24:17:18"}
+{"t": 26.5168, "kind": "in", "ch": "incoming", "len": 12, "hex": "ff080000010e030290010000", "packets": [{"id": "1.14", "type": "int32", "op": 2, "values": [400]}], "rest": null}
+{"t": 26.5611, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030020172407", "tc": "07:24:17:20"}
+{"t": 26.6064, "kind": "in", "ch": "incoming", "len": 9, "hex": "ff0500000107010200", "packets": [{"id": "1.7", "type": "int8", "op": 2, "values": [0]}], "rest": null}
+{"t": 26.6065, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030022172407", "tc": "07:24:17:22"}
+{"t": 26.6962, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030000182407", "tc": "07:24:18:00"}
+{"t": 26.7421, "kind": "in", "ch": "incoming", "len": 10, "hex": "ff060000010f01020300", "packets": [{"id": "1.15", "type": "int8", "op": 2, "values": [3, 0]}], "rest": null}
+{"t": 26.7864, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030002182407", "tc": "07:24:18:02"}
+{"t": 26.8314, "kind": "in", "ch": "incoming", "len": 20, "hex": "ff10000009070202c30242050000000010270000", "packets": [{"id": "9.7", "type": "int16", "op": 2, "values": [707, 1346, 0, 0, 10000, 0]}], "rest": null}
+{"t": 26.8763, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030004182407", "tc": "07:24:18:04"}
+{"t": 26.9215, "kind": "in", "ch": "incoming", "len": 9, "hex": "ff0500000108010200", "packets": [{"id": "1.8", "type": "int8", "op": 2, "values": [0]}], "rest": null}
+{"t": 26.9217, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030006182407", "tc": "07:24:18:06"}
+{"t": 27.0113, "kind": "in", "ch": "incoming", "len": 12, "hex": "ff08000001020202e0150a00", "packets": [{"id": "1.2", "type": "int16", "op": 2, "values": [5600, 10]}], "rest": null}
+{"t": 27.0561, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030008182407", "tc": "07:24:18:08"}
+{"t": 27.1018, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030010182407", "tc": "07:24:18:10"}
+{"t": 27.1468, "kind": "in", "ch": "incoming", "len": 12, "hex": "ff080000000280025e210000", "packets": [{"id": "0.2", "type": "fixed16", "op": 2, "values": [4.1709, 0.0]}], "rest": null}
+{"t": 27.1913, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030011182407", "tc": "07:24:18:11"}
+{"t": 27.2354, "kind": "in", "ch": "incoming", "len": 10, "hex": "ff060000000380028001", "packets": [{"id": "0.3", "type": "fixed16", "op": 2, "values": [0.1875]}], "rest": null}
+{"t": 27.28, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030013182407", "tc": "07:24:18:13"}
+{"t": 27.3267, "kind": "in", "ch": "incoming", "len": 8, "hex": "ff04000000010002", "packets": [{"id": "0.1", "type": "void", "op": 2, "values": []}], "rest": null}
+{"t": 27.327, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030015182407", "tc": "07:24:18:15"}
+{"t": 27.4165, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030017182407", "tc": "07:24:18:17"}
+{"t": 27.4612, "kind": "in", "ch": "incoming", "len": 10, "hex": "ff060000000702021800", "packets": [{"id": "0.7", "type": "int16", "op": 2, "values": [24]}], "rest": null}
+{"t": 27.5133, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030019182407", "tc": "07:24:18:19"}
+{"t": 27.5501, "kind": "in", "ch": "incoming", "len": 11, "hex": "ff07000009010102000001", "packets": [{"id": "9.1", "type": "int8", "op": 2, "values": [0, 0, 1]}], "rest": null}
+{"t": 27.5962, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030021182407", "tc": "07:24:18:21"}
+{"t": 27.6415, "kind": "in", "ch": "incoming", "len": 12, "hex": "ff0800000303010201325a01", "packets": [{"id": "3.3", "type": "int8", "op": 2, "values": [1, 50, 90, 1]}], "rest": null}
+{"t": 27.6418, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030023182407", "tc": "07:24:18:23"}
+{"t": 27.7303, "kind": "in", "ch": "incoming", "len": 12, "hex": "ff0800000905010200140005", "packets": [{"id": "9.5", "type": "int8", "op": 2, "values": [0, 20, 0, 5]}], "rest": null}
+{"t": 27.7752, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030001192407", "tc": "07:24:19:01"}
+{"t": 27.8214, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030003192407", "tc": "07:24:19:03"}
+{"t": 27.8661, "kind": "in", "ch": "incoming", "len": 10, "hex": "ff060000090601020001", "packets": [{"id": "9.6", "type": "int8", "op": 2, "values": [0, 1]}], "rest": null}
+{"t": 27.9112, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030005192407", "tc": "07:24:19:05"}
+{"t": 27.9567, "kind": "in", "ch": "incoming", "len": 18, "hex": "ff0e000001090202180018000018800d0000", "packets": [{"id": "1.9", "type": "int16", "op": 2, "values": [24, 24, 6144, 3456, 0]}], "rest": null}
+{"t": 28.0013, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030007192407", "tc": "07:24:19:07"}
+{"t": 28.0467, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030009192407", "tc": "07:24:19:09"}
+{"t": 28.1351, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030011192407", "tc": "07:24:19:11"}
+{"t": 28.1802, "kind": "in", "ch": "incoming", "len": 12, "hex": "ff080000010b030250460000", "packets": [{"id": "1.11", "type": "int32", "op": 2, "values": [18000]}], "rest": null}
+{"t": 28.2325, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030012192407", "tc": "07:24:19:12"}
+{"t": 28.3155, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030014192407", "tc": "07:24:19:14"}
+{"t": 28.3601, "kind": "in", "ch": "incoming", "len": 9, "hex": "ff050000010a010200", "packets": [{"id": "1.10", "type": "int8", "op": 2, "values": [0]}], "rest": null}
+{"t": 28.3603, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030016192407", "tc": "07:24:19:16"}
+{"t": 28.4508, "kind": "in", "ch": "incoming", "len": 16, "hex": "ff0c000009020202000000008f690000", "packets": [{"id": "9.2", "type": "int16", "op": 2, "values": [0, 0, 27023, 0]}], "rest": null}
+{"t": 28.495, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030018192407", "tc": "07:24:19:18"}
+{"t": 28.5412, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030020192407", "tc": "07:24:19:20"}
+{"t": 28.5854, "kind": "in", "ch": "incoming", "len": 10, "hex": "ff0600000a0001020301", "packets": [{"id": "10.0", "type": "int8", "op": 2, "values": [3, 1]}], "rest": null}
+{"t": 28.6311, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030022192407", "tc": "07:24:19:22"}
+{"t": 28.6762, "kind": "in", "ch": "incoming", "len": 14, "hex": "ff0a000009000202d32b64000b00", "packets": [{"id": "9.0", "type": "int16", "op": 2, "values": [11219, 100, 11]}], "rest": null}
+{"t": 28.7225, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030000202407", "tc": "07:24:20:00"}
+{"t": 28.7656, "kind": "in", "ch": "status", "hex": "03", "bits": "00000011"}
+{"t": 28.7657, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030002202407", "tc": "07:24:20:02"}
+{"t": 28.8554, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030004202407", "tc": "07:24:20:04"}
+{"t": 28.9457, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030006202407", "tc": "07:24:20:06"}
+{"t": 29.0366, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030008202407", "tc": "07:24:20:08"}
+{"t": 29.1258, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030010202407", "tc": "07:24:20:10"}
+{"t": 29.2153, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030011202407", "tc": "07:24:20:11"}
+{"t": 29.2604, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030013202407", "tc": "07:24:20:13"}
+{"t": 29.3504, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030015202407", "tc": "07:24:20:15"}
+{"t": 29.3957, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030017202407", "tc": "07:24:20:17"}
+{"t": 29.4437, "kind": "in", "ch": "incoming", "len": 14, "hex": "ff0a000009000202ce2b64000b00", "packets": [{"id": "9.0", "type": "int16", "op": 2, "values": [11214, 100, 11]}], "rest": null}
+{"t": 29.5304, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030019202407", "tc": "07:24:20:19"}
+{"t": 29.5754, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030021202407", "tc": "07:24:20:21"}
+{"t": 29.6654, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030023202407", "tc": "07:24:20:23"}
+{"t": 29.7553, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030001212407", "tc": "07:24:21:01"}
+{"t": 29.8457, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030003212407", "tc": "07:24:21:03"}
+{"t": 29.9352, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030005212407", "tc": "07:24:21:05"}
+{"t": 29.9801, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030007212407", "tc": "07:24:21:07"}
+{"t": 30.0706, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030009212407", "tc": "07:24:21:09"}
+{"t": 30.1603, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030011212407", "tc": "07:24:21:11"}
+{"t": 30.251, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030012212407", "tc": "07:24:21:12"}
+{"t": 30.2957, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030014212407", "tc": "07:24:21:14"}
+{"t": 30.3858, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030016212407", "tc": "07:24:21:16"}
+{"t": 30.4311, "kind": "in", "ch": "incoming", "len": 14, "hex": "ff0a000009000202ca2b64000b00", "packets": [{"id": "9.0", "type": "int16", "op": 2, "values": [11210, 100, 11]}], "rest": null}
+{"t": 30.4754, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030018212407", "tc": "07:24:21:18"}
+{"t": 30.5661, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030020212407", "tc": "07:24:21:20"}
+{"t": 30.6551, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030022212407", "tc": "07:24:21:22"}
+{"t": 30.6999, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030000222407", "tc": "07:24:22:00"}
+{"t": 30.7906, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030002222407", "tc": "07:24:22:02"}
+{"t": 30.8806, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030004222407", "tc": "07:24:22:04"}
+{"t": 30.9708, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030006222407", "tc": "07:24:22:06"}
+{"t": 31.0605, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030008222407", "tc": "07:24:22:08"}
+{"t": 31.151, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030010222407", "tc": "07:24:22:10"}
+{"t": 31.1956, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030011222407", "tc": "07:24:22:11"}
+{"t": 31.2856, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030013222407", "tc": "07:24:22:13"}
+{"t": 31.3754, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030015222407", "tc": "07:24:22:15"}
+{"t": 31.421, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030017222407", "tc": "07:24:22:17"}
+{"t": 31.4212, "kind": "in", "ch": "incoming", "len": 14, "hex": "ff0a000009000202cf2b64000b00", "packets": [{"id": "9.0", "type": "int16", "op": 2, "values": [11215, 100, 11]}], "rest": null}
+{"t": 31.5104, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030019222407", "tc": "07:24:22:19"}
+{"t": 31.6005, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030021222407", "tc": "07:24:22:21"}
+{"t": 31.6908, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030023222407", "tc": "07:24:22:23"}
+{"t": 31.7791, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030001232407", "tc": "07:24:23:01"}
+{"t": 31.8242, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030003232407", "tc": "07:24:23:03"}
+{"t": 31.9158, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030005232407", "tc": "07:24:23:05"}
+{"t": 32.0056, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030007232407", "tc": "07:24:23:07"}
+{"t": 32.0948, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030009232407", "tc": "07:24:23:09"}
+{"t": 32.141, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030011232407", "tc": "07:24:23:11"}
+{"t": 32.2309, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030012232407", "tc": "07:24:23:12"}
+{"t": 32.3202, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030014232407", "tc": "07:24:23:14"}
+{"t": 32.4092, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030016232407", "tc": "07:24:23:16"}
+{"t": 32.4548, "kind": "in", "ch": "incoming", "len": 14, "hex": "ff0a000009000202cd2b64000b00", "packets": [{"id": "9.0", "type": "int16", "op": 2, "values": [11213, 100, 11]}], "rest": null}
+{"t": 32.4994, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030018232407", "tc": "07:24:23:18"}
+{"t": 32.4996, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030020232407", "tc": "07:24:23:20"}
+{"t": 32.6345, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030022232407", "tc": "07:24:23:22"}
+{"t": 32.7252, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030000242407", "tc": "07:24:24:00"}
+{"t": 32.8144, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030002242407", "tc": "07:24:24:02"}
+{"t": 32.8594, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030004242407", "tc": "07:24:24:04"}
+{"t": 32.9496, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030006242407", "tc": "07:24:24:06"}
+{"t": 33.0395, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030008242407", "tc": "07:24:24:08"}
+{"t": 33.1297, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030010242407", "tc": "07:24:24:10"}
+{"t": 33.2204, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030011242407", "tc": "07:24:24:11"}
+{"t": 33.2643, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030013242407", "tc": "07:24:24:13"}
+{"t": 33.3546, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030015242407", "tc": "07:24:24:15"}
+{"t": 33.4004, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030017242407", "tc": "07:24:24:17"}
+{"t": 33.4007, "kind": "in", "ch": "incoming", "len": 14, "hex": "ff0a000009000202ce2b64000b00", "packets": [{"id": "9.0", "type": "int16", "op": 2, "values": [11214, 100, 11]}], "rest": null}
+{"t": 33.5343, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030019242407", "tc": "07:24:24:19"}
+{"t": 33.5794, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030021242407", "tc": "07:24:24:21"}
+{"t": 33.6697, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030023242407", "tc": "07:24:24:23"}
+{"t": 33.7598, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030001252407", "tc": "07:24:25:01"}
+{"t": 33.8497, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030003252407", "tc": "07:24:25:03"}
+{"t": 33.94, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030005252407", "tc": "07:24:25:05"}
+{"t": 33.985, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030007252407", "tc": "07:24:25:07"}
+{"t": 34.0747, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030009252407", "tc": "07:24:25:09"}
+{"t": 34.1647, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030011252407", "tc": "07:24:25:11"}
+{"t": 34.2541, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030012252407", "tc": "07:24:25:12"}
+{"t": 34.2994, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030014252407", "tc": "07:24:25:14"}
+{"t": 34.3898, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030016252407", "tc": "07:24:25:16"}
+{"t": 34.4344, "kind": "in", "ch": "incoming", "len": 14, "hex": "ff0a000009000202d22b64000b00", "packets": [{"id": "9.0", "type": "int16", "op": 2, "values": [11218, 100, 11]}], "rest": null}
+{"t": 34.4812, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030018252407", "tc": "07:24:25:18"}
+{"t": 34.5693, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030020252407", "tc": "07:24:25:20"}
+{"t": 34.6596, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030022252407", "tc": "07:24:25:22"}
+{"t": 34.7045, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030000262407", "tc": "07:24:26:00"}
+{"t": 34.7946, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030002262407", "tc": "07:24:26:02"}
+{"t": 34.8849, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030004262407", "tc": "07:24:26:04"}
+{"t": 34.9747, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030006262407", "tc": "07:24:26:06"}
+{"t": 35.0196, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030008262407", "tc": "07:24:26:08"}
+{"t": 35.1095, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030010262407", "tc": "07:24:26:10"}
+{"t": 35.1998, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030012262407", "tc": "07:24:26:12"}
+{"t": 35.2897, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030013262407", "tc": "07:24:26:13"}
+{"t": 35.3799, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030015262407", "tc": "07:24:26:15"}
+{"t": 35.4244, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030017262407", "tc": "07:24:26:17"}
+{"t": 35.4246, "kind": "in", "ch": "incoming", "len": 14, "hex": "ff0a000009000202cc2b64000b00", "packets": [{"id": "9.0", "type": "int16", "op": 2, "values": [11212, 100, 11]}], "rest": null}
+{"t": 35.5148, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030019262407", "tc": "07:24:26:19"}
+{"t": 35.6049, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030021262407", "tc": "07:24:26:21"}
+{"t": 35.6947, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030023262407", "tc": "07:24:26:23"}
+{"t": 35.7402, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030001272407", "tc": "07:24:27:01"}
+{"t": 35.8297, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030003272407", "tc": "07:24:27:03"}
+{"t": 35.9194, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030005272407", "tc": "07:24:27:05"}
+{"t": 36.0096, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030007272407", "tc": "07:24:27:07"}
+{"t": 36.0982, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030009272407", "tc": "07:24:27:09"}
+{"t": 36.1441, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030011272407", "tc": "07:24:27:11"}
+{"t": 36.2349, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030012272407", "tc": "07:24:27:12"}
+{"t": 36.3239, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030014272407", "tc": "07:24:27:14"}
+{"t": 36.4135, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030016272407", "tc": "07:24:27:16"}
+{"t": 36.4597, "kind": "in", "ch": "incoming", "len": 14, "hex": "ff0a000009000202d42b64000b00", "packets": [{"id": "9.0", "type": "int16", "op": 2, "values": [11220, 100, 11]}], "rest": null}
+{"t": 36.46, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030018272407", "tc": "07:24:27:18"}
+{"t": 36.5487, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030020272407", "tc": "07:24:27:20"}
+{"t": 36.6398, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030022272407", "tc": "07:24:27:22"}
+{"t": 36.7296, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030000282407", "tc": "07:24:28:00"}
+{"t": 36.8183, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030002282407", "tc": "07:24:28:02"}
+{"t": 36.8635, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030004282407", "tc": "07:24:28:04"}
+{"t": 36.9538, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030006282407", "tc": "07:24:28:06"}
+{"t": 37.0431, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030008282407", "tc": "07:24:28:08"}
+{"t": 37.1336, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030010282407", "tc": "07:24:28:10"}
+{"t": 37.1785, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030012282407", "tc": "07:24:28:12"}
+{"t": 37.2684, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030013282407", "tc": "07:24:28:13"}
+{"t": 37.3581, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030015282407", "tc": "07:24:28:15"}
+{"t": 37.4031, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030017282407", "tc": "07:24:28:17"}
+{"t": 37.4034, "kind": "in", "ch": "incoming", "len": 14, "hex": "ff0a000009000202ca2b64000b00", "packets": [{"id": "9.0", "type": "int16", "op": 2, "values": [11210, 100, 11]}], "rest": null}
+{"t": 37.4935, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030019282407", "tc": "07:24:28:19"}
+{"t": 37.5838, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030021282407", "tc": "07:24:28:21"}
+{"t": 37.6734, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030023282407", "tc": "07:24:28:23"}
+{"t": 37.7636, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030001292407", "tc": "07:24:29:01"}
+{"t": 37.8537, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030003292407", "tc": "07:24:29:03"}
+{"t": 37.898, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030005292407", "tc": "07:24:29:05"}
+{"t": 37.9888, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030007292407", "tc": "07:24:29:07"}
+{"t": 38.0789, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030009292407", "tc": "07:24:29:09"}
+{"t": 38.1681, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030011292407", "tc": "07:24:29:11"}
+{"t": 38.258, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030012292407", "tc": "07:24:29:12"}
+{"t": 38.303, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030014292407", "tc": "07:24:29:14"}
+{"t": 38.3932, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030016292407", "tc": "07:24:29:16"}
+{"t": 38.4413, "kind": "in", "ch": "incoming", "len": 14, "hex": "ff0a000009000202cd2b64000b00", "packets": [{"id": "9.0", "type": "int16", "op": 2, "values": [11213, 100, 11]}], "rest": null}
+{"t": 38.483, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030018292407", "tc": "07:24:29:18"}
+{"t": 38.5733, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030020292407", "tc": "07:24:29:20"}
+{"t": 38.6184, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030022292407", "tc": "07:24:29:22"}
+{"t": 38.7086, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030000302407", "tc": "07:24:30:00"}
+{"t": 38.7988, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030002302407", "tc": "07:24:30:02"}
+{"t": 38.8881, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030004302407", "tc": "07:24:30:04"}
+{"t": 38.9789, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030006302407", "tc": "07:24:30:06"}
+{"t": 39.0236, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030008302407", "tc": "07:24:30:08"}
+{"t": 39.1138, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030010302407", "tc": "07:24:30:10"}
+{"t": 39.2037, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030012302407", "tc": "07:24:30:12"}
+{"t": 39.2936, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030013302407", "tc": "07:24:30:13"}
+{"t": 39.3384, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030015302407", "tc": "07:24:30:15"}
+{"t": 39.4276, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030017302407", "tc": "07:24:30:17"}
+{"t": 39.4735, "kind": "in", "ch": "incoming", "len": 14, "hex": "ff0a000009000202cc2b64000b00", "packets": [{"id": "9.0", "type": "int16", "op": 2, "values": [11212, 100, 11]}], "rest": null}
+{"t": 39.5199, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030019302407", "tc": "07:24:30:19"}
+{"t": 39.6087, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030021302407", "tc": "07:24:30:21"}
+{"t": 39.6988, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030023302407", "tc": "07:24:30:23"}
+{"t": 39.7433, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030001312407", "tc": "07:24:31:01"}
+{"t": 39.8339, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030003312407", "tc": "07:24:31:03"}
+{"t": 39.9235, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030005312407", "tc": "07:24:31:05"}
+{"t": 40.0139, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030007312407", "tc": "07:24:31:07"}
+{"t": 40.0582, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030009312407", "tc": "07:24:31:09"}
+{"t": 40.1478, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030011312407", "tc": "07:24:31:11"}
+{"t": 40.2389, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030013312407", "tc": "07:24:31:13"}
+{"t": 40.3278, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030014312407", "tc": "07:24:31:14"}
+{"t": 40.4175, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030016312407", "tc": "07:24:31:16"}
+{"t": 40.4178, "kind": "in", "ch": "incoming", "len": 14, "hex": "ff0a000009000202d22b64000b00", "packets": [{"id": "9.0", "type": "int16", "op": 2, "values": [11218, 100, 11]}], "rest": null}
+{"t": 40.4178, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030018312407", "tc": "07:24:31:18"}
+{"t": 40.5527, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030020312407", "tc": "07:24:31:20"}
+{"t": 40.6421, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030022312407", "tc": "07:24:31:22"}
+{"t": 40.7326, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030000322407", "tc": "07:24:32:00"}
+{"t": 40.7774, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030002322407", "tc": "07:24:32:02"}
+{"t": 40.8676, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030004322407", "tc": "07:24:32:04"}
+{"t": 40.9578, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030006322407", "tc": "07:24:32:06"}
+{"t": 41.0477, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030008322407", "tc": "07:24:32:08"}
+{"t": 41.1377, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030010322407", "tc": "07:24:32:10"}
+{"t": 41.184, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030012322407", "tc": "07:24:32:12"}
+{"t": 41.2727, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030013322407", "tc": "07:24:32:13"}
+{"t": 41.3625, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030015322407", "tc": "07:24:32:15"}
+{"t": 41.4078, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030017322407", "tc": "07:24:32:17"}
+{"t": 41.4526, "kind": "in", "ch": "incoming", "len": 14, "hex": "ff0a000009000202d12b64000b00", "packets": [{"id": "9.0", "type": "int16", "op": 2, "values": [11217, 100, 11]}], "rest": null}
+{"t": 41.4994, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030019322407", "tc": "07:24:32:19"}
+{"t": 41.5877, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030021322407", "tc": "07:24:32:21"}
+{"t": 41.678, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030023322407", "tc": "07:24:32:23"}
+{"t": 41.7676, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030001332407", "tc": "07:24:33:01"}
+{"t": 41.8574, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030003332407", "tc": "07:24:33:03"}
+{"t": 41.9027, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030005332407", "tc": "07:24:33:05"}
+{"t": 41.9928, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030007332407", "tc": "07:24:33:07"}
+{"t": 42.0827, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030009332407", "tc": "07:24:33:09"}
+{"t": 42.1727, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030011332407", "tc": "07:24:33:11"}
+{"t": 42.2178, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030013332407", "tc": "07:24:33:13"}
+{"t": 42.3078, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030014332407", "tc": "07:24:33:14"}
+{"t": 42.3984, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030016332407", "tc": "07:24:33:16"}
+{"t": 42.3989, "kind": "in", "ch": "incoming", "len": 14, "hex": "ff0a000009000202d52b64000b00", "packets": [{"id": "9.0", "type": "int16", "op": 2, "values": [11221, 100, 11]}], "rest": null}
+{"t": 42.4879, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030018332407", "tc": "07:24:33:18"}
+{"t": 42.5778, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030020332407", "tc": "07:24:33:20"}
+{"t": 42.6227, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030022332407", "tc": "07:24:33:22"}
+{"t": 42.7127, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030000342407", "tc": "07:24:34:00"}
+{"t": 42.7578, "kind": "in", "ch": "status", "hex": "03", "bits": "00000011"}
+{"t": 42.7581, "kind": "read", "what": "status", "hex": "03"}
+{"t": 42.8028, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030002342407", "tc": "07:24:34:02"}
+{"t": 42.8928, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030004342407", "tc": "07:24:34:04"}
+{"t": 42.9372, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030006342407", "tc": "07:24:34:06"}
+{"t": 43.0277, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030008342407", "tc": "07:24:34:08"}
+{"t": 43.1179, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030010342407", "tc": "07:24:34:10"}
+{"t": 43.2077, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030012342407", "tc": "07:24:34:12"}
+{"t": 43.2978, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030013342407", "tc": "07:24:34:13"}
+{"t": 43.3422, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030015342407", "tc": "07:24:34:15"}
+{"t": 43.388, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030017342407", "tc": "07:24:34:17"}
+{"t": 43.4326, "kind": "in", "ch": "incoming", "len": 14, "hex": "ff0a000009000202d02b64000b00", "packets": [{"id": "9.0", "type": "int16", "op": 2, "values": [11216, 100, 11]}], "rest": null}
+{"t": 43.5224, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030019342407", "tc": "07:24:34:19"}
+{"t": 43.613, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030021342407", "tc": "07:24:34:21"}
+{"t": 43.6576, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030023342407", "tc": "07:24:34:23"}
+{"t": 43.7464, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030001352407", "tc": "07:24:35:01"}
+{"t": 43.8379, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030003352407", "tc": "07:24:35:03"}
+{"t": 43.9279, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030005352407", "tc": "07:24:35:05"}
+{"t": 44.0179, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030007352407", "tc": "07:24:35:07"}
+{"t": 44.0617, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030009352407", "tc": "07:24:35:09"}
+{"t": 44.1519, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030011352407", "tc": "07:24:35:11"}
+{"t": 44.2426, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030013352407", "tc": "07:24:35:13"}
+{"t": 44.3318, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030014352407", "tc": "07:24:35:14"}
+{"t": 44.3763, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030016352407", "tc": "07:24:35:16"}
+{"t": 44.4237, "kind": "in", "ch": "incoming", "len": 14, "hex": "ff0a000009000202d12b64000b00", "packets": [{"id": "9.0", "type": "int16", "op": 2, "values": [11217, 100, 11]}], "rest": null}
+{"t": 44.4674, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030018352407", "tc": "07:24:35:18"}
+{"t": 44.5566, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030020352407", "tc": "07:24:35:20"}
+{"t": 44.6467, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030022352407", "tc": "07:24:35:22"}
+{"t": 44.7367, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030000362407", "tc": "07:24:36:00"}
+{"t": 44.7595, "kind": "done"}
+{"t": 44.7813, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030002362407", "tc": "07:24:36:02"}
+{"t": 44.8715, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030004362407", "tc": "07:24:36:04"}
+{"t": 44.9618, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030006362407", "tc": "07:24:36:06"}
+{"t": 45.0518, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030008362407", "tc": "07:24:36:08"}
+{"t": 45.0966, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030010362407", "tc": "07:24:36:10"}
+{"t": 45.1864, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030012362407", "tc": "07:24:36:12"}
+{"t": 45.2767, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030013362407", "tc": "07:24:36:13"}
+{"t": 45.3665, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030015362407", "tc": "07:24:36:15"}
+{"t": 45.4121, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030017362407", "tc": "07:24:36:17"}
+{"t": 45.4599, "kind": "in", "ch": "incoming", "len": 14, "hex": "ff0a000009000202cf2b64000b00", "packets": [{"id": "9.0", "type": "int16", "op": 2, "values": [11215, 100, 11]}], "rest": null}
+{"t": 45.5082, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030019362407", "tc": "07:24:36:19"}
+{"t": 45.5916, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030021362407", "tc": "07:24:36:21"}
+{"t": 45.6821, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030023362407", "tc": "07:24:36:23"}
+{"t": 45.7717, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030001372407", "tc": "07:24:37:01"}
+{"t": 45.8168, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030003372407", "tc": "07:24:37:03"}
+{"t": 45.9067, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030005372407", "tc": "07:24:37:05"}
+{"t": 45.9969, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030007372407", "tc": "07:24:37:07"}
+{"t": 46.0869, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030009372407", "tc": "07:24:37:09"}
+{"t": 46.1766, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030011372407", "tc": "07:24:37:11"}
+{"t": 46.2214, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030013372407", "tc": "07:24:37:13"}
+{"t": 46.3112, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030014372407", "tc": "07:24:37:14"}
+{"t": 46.4028, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030016372407", "tc": "07:24:37:16"}
+{"t": 46.403, "kind": "in", "ch": "incoming", "len": 14, "hex": "ff0a000009000202d12b64000b00", "packets": [{"id": "9.0", "type": "int16", "op": 2, "values": [11217, 100, 11]}], "rest": null}
+{"t": 46.4918, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030018372407", "tc": "07:24:37:18"}
+{"t": 46.5367, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030020372407", "tc": "07:24:37:20"}
+{"t": 46.627, "kind": "in", "ch": "timecode", "hex": "ff0800ff0904030022372407", "tc": "07:24:37:22"}
+{"t": 46.7155, "kind": "disconnected"}

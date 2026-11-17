@@ -1,0 +1,17 @@
+#!/bin/sh
+# Reconnect to an already-paired camera with pairing forbidden. No PIN is ever asked for.
+cd "$HOME/magicremote-m0" || exit 1
+ADDR=${ADDR:?set ADDR to the camera Bluetooth address}; HCI=${HCI:-hci0}; ts=$(date +%H%M%S)
+dumpcap -q -i bluetooth-monitor -w "reconn-$ts.pcapng" 2>/dev/null &
+cap=$!
+trap 'kill $cap 2>/dev/null' EXIT INT TERM
+sleep 1
+venv/bin/python m0.py --addr "$ADDR" --adapter "$HCI" --strict --log "reconn-$ts.jsonl" \
+    --do wait:12 read-status >/dev/null 2>&1
+rc=$?
+case $rc in
+    0) echo "RESULT: PASS - reconnected and got data without a PIN." ;;
+    6) echo "RESULT: FAIL - a new pairing was started (rejected; dismiss any PIN on the camera)." ;;
+    *) echo "RESULT: FAIL - code $rc (see reconn-$ts.jsonl)." ;;
+esac
+exit $rc

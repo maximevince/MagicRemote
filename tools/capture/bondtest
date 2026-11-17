@@ -1,0 +1,32 @@
+#!/bin/sh
+# One PIN, one question: does the camera keep the bond when we finish the handshake the way
+# Blackmagic's own app does (Device Name + Camera Status 0x01 after pairing)?
+# Run from a real terminal:  ssh -t <rig> magicremote-m0/bondtest
+# Pairs once (you type the PIN here), disconnects, waits, reconnects with pairing forbidden.
+cd "$HOME/magicremote-m0" || exit 1
+ADDR=${ADDR:?set ADDR to the camera Bluetooth address}; HCI=${HCI:-hci0}; ts=$(date +%H%M%S)
+dumpcap -q -i bluetooth-monitor -w "bond-$ts.pcapng" 2>/dev/null &
+cap=$!
+trap 'kill $cap 2>/dev/null' EXIT INT TERM
+sleep 1
+echo "Step 1/2  Pairing on $HCI. Watch the camera: it will show a PIN."
+venv/bin/python m0.py --addr "$ADDR" --adapter "$HCI" --pair --pin-tty --log "bond-$ts-pair.jsonl" \
+    --do power:on wait:10 read-status >/dev/null
+rc=$?
+if [ $rc -ne 0 ]; then
+    echo "Step 1 failed (code $rc). Stopping here; nothing else will be tried."
+    exit $rc
+fi
+echo "Paired, handshake done, disconnected. Waiting 20 s..."
+sleep 20
+echo "Step 2/2  Reconnecting. No PIN should be needed. Do not touch the camera."
+venv/bin/python m0.py --addr "$ADDR" --adapter "$HCI" --strict --log "bond-$ts-reconnect.jsonl" \
+    --do wait:12 read-status >/dev/null
+rc=$?
+case $rc in
+    0) echo "RESULT: PASS - reconnected and got data without a PIN." ;;
+    6) echo "RESULT: FAIL - the camera asked for a new PIN (request rejected, dismiss it on the camera)." ;;
+    *) echo "RESULT: FAIL - code $rc (see bond-$ts-reconnect.jsonl)." ;;
+esac
+echo "Logs: ~/magicremote-m0/bond-$ts-*"
+exit $rc

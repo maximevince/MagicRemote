@@ -1,0 +1,3 @@
+#!/bin/sh
+# Usage: pin 123456  — hand the camera's PIN to a waiting m0.py pairing agent (atomic write).
+d="$HOME/magicremote-m0"; printf '%s\n' "$1" > "$d/passkey.tmp" && mv "$d/passkey.tmp" "$d/passkey" && echo "PIN handed over"
