@@ -10,7 +10,7 @@ import {
  * What the camera has told us. The camera is the only source of truth:
  * `confirmed` holds the last reported value, `expected` what the app asked for while a write is
  * outstanding (plus a quiet period), and the UI shows `expected ?? confirmed`.
- * Only the parameters the M1a slice shows are tracked.
+ * Only the parameters the app shows are tracked.
  */
 
 export type ParamStatus = 'confirmed' | 'pending' | 'unconfirmable' | 'unknown';
@@ -22,7 +22,10 @@ export class Param<T> {
 	confirmedAt = $state<number | undefined>(undefined);
 	expected = $state<T | undefined>(undefined);
 	status = $state<ParamStatus>('unknown');
+	/** An acknowledged write got no report back (after any retry): "camera ignored this". */
+	noEcho = $state(false);
 	#quiet: ReturnType<typeof setTimeout> | null = null;
+	#reports = 0;
 
 	get value(): T | undefined {
 		return this.expected ?? this.confirmed;
@@ -33,9 +36,16 @@ export class Param<T> {
 		return this.status === 'confirmed' || (this.status === 'pending' && this.confirmedAt !== undefined);
 	}
 
+	/** Reports received so far (any value); lets a writer tell whether a report came after its write. */
+	get reportCount(): number {
+		return this.#reports;
+	}
+
 	report(value: T, at: number): void {
+		this.#reports++;
 		this.confirmed = value;
 		this.confirmedAt = at;
+		this.noEcho = false;
 		if (this.expected === undefined) this.status = 'confirmed';
 	}
 
@@ -44,16 +54,30 @@ export class Param<T> {
 		this.#clearQuiet();
 		this.expected = value;
 		this.status = 'pending';
+		this.noEcho = false;
 	}
 
-	/** The last write was acknowledged: keep `expected` for the quiet period, then let `confirmed` win. */
+	/**
+	 * The last write was acknowledged: keep `expected` for the quiet period, then let `confirmed`
+	 * win. Does nothing when nothing is pending (e.g. the state was invalidated meanwhile).
+	 */
 	release(quietMs = QUIET_PERIOD_MS): void {
+		if (this.status !== 'pending') return;
 		this.#clearQuiet();
 		this.#quiet = setTimeout(() => {
 			this.#quiet = null;
+			if (this.status !== 'pending') return;
 			this.expected = undefined;
 			this.status = this.confirmedAt === undefined ? 'unknown' : 'confirmed';
 		}, quietMs);
+	}
+
+	/** The write failed or was dropped: show the camera's value again at once. */
+	abandon(): void {
+		if (this.status !== 'pending') return;
+		this.#clearQuiet();
+		this.expected = undefined;
+		this.status = this.confirmedAt === undefined ? 'unknown' : 'confirmed';
 	}
 
 	/** The link dropped: keep the last value for display, but it is no longer the camera's state. */
@@ -61,6 +85,7 @@ export class Param<T> {
 		this.#clearQuiet();
 		this.expected = undefined;
 		this.status = 'unknown';
+		this.noEcho = false;
 	}
 
 	#clearQuiet(): void {
@@ -109,6 +134,32 @@ export class CameraState {
 	readonly media = new Param<number[]>();
 	readonly remaining = new Param<number[]>();
 
+	/** 1.14; reported instead of `gainDb` while the camera is in ISO mode. */
+	readonly iso = new Param<number>();
+	/** 1.13 in dB; reported instead of `iso` while the camera is in gain mode. */
+	readonly gainDb = new Param<number>();
+	/** 1.11, degrees × 100. */
+	readonly shutterAngle = new Param<number>();
+	/** 1.12, x in 1/x s. */
+	readonly shutterSpeed = new Param<number>();
+	/** 0.2 as AV; `NO_LENS_AV` (−16) means no lens. */
+	readonly aperture = new Param<number>();
+	/** 0.2 second element: 0 f-stops, 1 T-stops (null when not sent). */
+	apertureUnits = $state<number | null>(null);
+	/** 1.2 [Kelvin, tint]. */
+	readonly whiteBalance = new Param<[number, number]>();
+	/** 10.0 [codec, variant]. */
+	readonly codec = new Param<number[]>();
+	/** 1.9 [file fps, sensor fps, width, height, flags]. */
+	readonly recordingFormat = new Param<number[]>();
+	/** 1.7: 0 film, 1 video, 2 extended video. */
+	readonly dynamicRange = new Param<number>();
+
+	/** Which of 1.14 / 1.13 the camera reported last: that is the unit it is in. */
+	sensitivityUnit = $state<'iso' | 'gain' | null>(null);
+	/** Which of 1.11 / 1.12 the camera reported last: that is the unit it displays. */
+	shutterUnit = $state<'angle' | 'speed' | null>(null);
+
 	get power(): boolean | null {
 		return this.statusByte === null ? null : (this.statusByte & 0x01) !== 0;
 	}
@@ -152,6 +203,39 @@ export class CameraState {
 			case 'status.remainingTime':
 				this.remaining.report([...values], at);
 				break;
+			case 'video.iso':
+				this.iso.report(values[0], at);
+				this.sensitivityUnit = 'iso';
+				break;
+			case 'video.gainDb':
+				this.gainDb.report(values[0], at);
+				this.sensitivityUnit = 'gain';
+				break;
+			case 'video.shutterAngle':
+				this.shutterAngle.report(values[0], at);
+				this.shutterUnit = 'angle';
+				break;
+			case 'video.shutterSpeed':
+				this.shutterSpeed.report(values[0], at);
+				this.shutterUnit = 'speed';
+				break;
+			case 'lens.apertureFstop':
+				this.aperture.report(values[0], at);
+				// Units arrive typed fixed16 on the 6K G2; whether T-stops come as 1.0 or as raw 1 is unknown, so any non-zero counts.
+				this.apertureUnits = values.length > 1 ? (values[1] !== 0 ? 1 : 0) : null;
+				break;
+			case 'video.whiteBalance':
+				this.whiteBalance.report([values[0], values[1]], at);
+				break;
+			case 'media.codec':
+				this.codec.report([...values], at);
+				break;
+			case 'video.recordingFormat':
+				this.recordingFormat.report([...values], at);
+				break;
+			case 'video.dynamicRange':
+				this.dynamicRange.report(values[0], at);
+				break;
 		}
 		return { key: def.key };
 	}
@@ -164,6 +248,24 @@ export class CameraState {
 
 	/** Reports may have been missed (resync): each parameter is current again once re-reported. */
 	markStale(): void {
-		for (const p of [this.transport, this.battery, this.media, this.remaining]) p.invalidate();
+		for (const p of this.#params()) p.invalidate();
+	}
+
+	#params(): Param<unknown>[] {
+		return [
+			this.transport,
+			this.battery,
+			this.media,
+			this.remaining,
+			this.iso,
+			this.gainDb,
+			this.shutterAngle,
+			this.shutterSpeed,
+			this.aperture,
+			this.whiteBalance,
+			this.codec,
+			this.recordingFormat,
+			this.dynamicRange
+		] as Param<unknown>[];
 	}
 }

@@ -11,6 +11,7 @@ import {
 } from '../transport/index.ts';
 import { decodeTimecode, readCString, toHex } from '../protocol/index.ts';
 import { CameraState } from './camera-state.svelte.ts';
+import { CameraControls, type ControlsConfig, type ControlWrite, type LinkStatus } from './camera-controls.svelte.ts';
 import { cameraKey, type KnownCameraStore } from './known-cameras.ts';
 import { PacketLog } from './packet-log.svelte.ts';
 import { RecordController, type RecordConfig } from './record-controller.svelte.ts';
@@ -95,6 +96,7 @@ export interface SessionConfig {
 	/** Protocol Version majors we know; others get a warning. */
 	knownProtocolMajors: readonly string[];
 	record?: Partial<RecordConfig>;
+	controls?: Partial<ControlsConfig>;
 }
 
 export const DEFAULT_SESSION_CONFIG: SessionConfig = {
@@ -170,6 +172,7 @@ export class CameraSession {
 	readonly config: SessionConfig;
 	readonly state = new CameraState();
 	readonly record: RecordController;
+	readonly controls: CameraControls;
 	readonly log: PacketLog;
 	readonly queue: GattQueue;
 
@@ -236,6 +239,15 @@ export class CameraSession {
 			send: (bytes, label) => this.#sendRecord(bytes, label),
 			now: this.#now,
 			config: this.config.record
+		});
+		this.controls = new CameraControls({
+			state: this.state,
+			link: () => this.#linkStatus(),
+			live: () => this.live,
+			syncing: () => this.syncing,
+			send: (w) => this.#sendControl(w),
+			now: this.#now,
+			config: this.config.controls
 		});
 	}
 
@@ -308,6 +320,7 @@ export class CameraSession {
 		this.#abortSync(new QueueFlushedError('user'));
 		this.queue.flush('user');
 		this.record.linkLost();
+		this.controls.linkLost();
 		this.state.invalidate();
 		this.phase = 'disconnected';
 		this.step = null;
@@ -790,6 +803,7 @@ export class CameraSession {
 		this.#stopHeartbeat();
 		this.state.invalidate();
 		this.record.linkLost();
+		this.controls.linkLost();
 		// A running attempt sees its operation fail and decides; otherwise recover from here.
 		if (!this.#busy && (this.phase === 'ready' || this.phase === 'standby')) this.#startReconnect();
 	}
@@ -874,6 +888,44 @@ export class CameraSession {
 			lane: 'urgent',
 			run: async () => {
 				this.log.outgoing(bytes, label);
+				await link.write('outgoing', bytes);
+			}
+		});
+	}
+
+	#linkStatus(): LinkStatus {
+		switch (this.phase) {
+			case 'ready':
+			case 'standby':
+			case 'reconnecting':
+				return this.phase;
+			default:
+				return 'offline';
+		}
+	}
+
+	/** Camera controls: normal lane, coalesced per parameter, built when the queue sends them. */
+	#sendControl(w: ControlWrite): Promise<void> {
+		const link = this.#link;
+		if (!link || this.phase !== 'ready' || !this.#linkUp) {
+			return Promise.reject(new LinkError('disconnected', 'not connected'));
+		}
+		const token = this.#conn;
+		const c = w.coalesce;
+		return this.queue.push({
+			label: w.label,
+			lane: 'normal',
+			coalesce:
+				c === undefined
+					? undefined
+					: c === 'replace'
+						? { key: w.key, mode: 'replace' }
+						: { key: w.key, mode: 'accumulate', deltas: c.deltas },
+			run: async (ctx) => {
+				// Queued for a connection that is gone: never replayed on the next one.
+				if (token !== this.#conn) throw new Superseded();
+				const bytes = w.build(ctx.deltas);
+				this.log.outgoing(bytes, w.label);
 				await link.write('outgoing', bytes);
 			}
 		});

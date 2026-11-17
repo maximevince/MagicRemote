@@ -11,6 +11,8 @@
 	import ConnectScreen from '#lib/ui/components/ConnectScreen.svelte';
 	import RecordButton from '#lib/ui/components/RecordButton.svelte';
 	import Timecode from '#lib/ui/components/Timecode.svelte';
+	import ControlStrip from '#lib/ui/components/ControlStrip.svelte';
+	import FormatLine from '#lib/ui/components/FormatLine.svelte';
 	import PacketInspector from '#lib/ui/overlays/PacketInspector.svelte';
 
 	let supported = $state<boolean | null>(null);
@@ -35,11 +37,11 @@
 	const recording = $derived(session?.record.display === 'recording');
 	const connected = $derived(!!session && session.phase !== 'idle' && session.phase !== 'disconnected' && session.phase !== 'failed');
 
-	// A reload or navigation drops the Bluetooth link.
-	$effect(() => {
 	// A new app version must not take over while a camera is connected.
 	$effect(() => (connected ? updates.hold('camera connected') : undefined));
 
+	// A reload or navigation drops the Bluetooth link.
+	$effect(() => {
 		if (!connected) return;
 		const guard = (e: BeforeUnloadEvent) => e.preventDefault();
 		window.addEventListener('beforeunload', guard);
@@ -113,9 +115,14 @@
 		{/if}
 
 		<div class="stage">
-			<Timecode timecode={session.state.timecode} live={session.live} />
+			<div class="readout">
+				<Timecode timecode={session.state.timecode} live={session.live} />
+				<FormatLine state={session.state} />
+			</div>
 			<RecordButton record={session.record} remaining={session.state.activeRemaining} />
 		</div>
+
+		<ControlStrip controls={session.controls} state={session.state} />
 
 		<footer>
 			<button onclick={() => session?.disconnect()}>Disconnect</button>
@@ -157,6 +164,12 @@
 		justify-content: center;
 		gap: 24px;
 		padding: var(--pad);
+	}
+	.readout {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 4px;
 	}
 	.banner {
 		display: flex;
