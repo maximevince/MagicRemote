@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { CameraSession, HandshakeStep } from '#lib/domain/camera-session.svelte.ts';
+	import Logo from '#lib/ui/components/Logo.svelte';
 	import type { Os } from '#lib/platform/detect.ts';
 	import {
 		disconnectNote,
@@ -56,7 +57,7 @@
 </script>
 
 <section class="connect">
-	<h1>MagicRemote</h1>
+	<h1><Logo size={44} /></h1>
 
 	{#if inProgress}
 		<div class="card">
