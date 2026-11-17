@@ -153,7 +153,7 @@
 		border-bottom: 1px solid var(--border);
 	}
 	.banner.warn {
-		background: rgb(240 180 41 / 0.15);
+		background: rgb(246 194 68 / 0.15);
 	}
 	.banner.danger {
 		background: var(--rec);

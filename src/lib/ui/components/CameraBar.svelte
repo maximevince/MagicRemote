@@ -38,7 +38,7 @@
 		gap: var(--gap);
 		padding: 10px var(--pad);
 		background: var(--surface);
-		border-bottom: 1px solid var(--border);
+		border-bottom: 2px solid var(--accent);
 	}
 	.who {
 		display: flex;
@@ -74,6 +74,7 @@
 		flex-direction: column;
 		align-items: flex-end;
 		font-size: 0.85rem;
+		color: var(--accent);
 		font-variant-numeric: tabular-nums;
 		white-space: nowrap;
 	}

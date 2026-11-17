@@ -66,7 +66,7 @@
 		position: fixed;
 		inset: 0;
 		z-index: 30;
-		background: rgb(13 15 18 / 0.97);
+		background: rgb(11 10 9 / 0.97);
 		display: flex;
 		flex-direction: column;
 	}

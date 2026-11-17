@@ -1,22 +1,24 @@
 :root {
 	color-scheme: dark;
 
-	--bg: #0d0f12;
-	--surface: #171a1f;
-	--surface-2: #20242b;
-	--border: #2d323a;
-	--text: #e8eaed;
-	--text-dim: #9aa1ab;
+	/* Warm blacks and greys, orange highlight, amber warnings, tally red. */
+	--bg: #0b0a09;
+	--surface: #1a1816;
+	--surface-2: #27231f;
+	--border: #3d3730;
+	--text: #f3efe9;
+	--text-dim: #9c9489;
 
-	--accent: #4c9dff;
-	--ok: #3ecf7a;
-	--warn: #f0b429;
-	--danger: #ff4d4f;
-	--rec: #e5252a;
-	--rec-tint: rgb(229 37 42 / 0.12);
+	--accent: #f28a1c;
+	--on-accent: #160d02;
+	--ok: #5fb56a;
+	--warn: #f6c244;
+	--danger: #e3262d;
+	--rec: #e3262d;
+	--rec-tint: rgb(227 38 45 / 0.14);
 
-	--radius: 12px;
-	--radius-sm: 8px;
+	--radius: 6px;
+	--radius-sm: 4px;
 	--gap: 12px;
 	--pad: 16px;
 	--touch: 48px;
@@ -63,7 +65,7 @@ button:disabled {
 button.primary {
 	background: var(--accent);
 	border-color: var(--accent);
-	color: #fff;
+	color: var(--on-accent);
 	font-weight: 600;
 }
 
