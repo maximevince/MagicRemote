@@ -1,7 +1,9 @@
 <script lang="ts">
 	import type { CameraSession, HandshakeStep } from '#lib/domain/camera-session.svelte.ts';
+	import HelpDialog from '#lib/ui/components/HelpDialog.svelte';
 	import Logo from '#lib/ui/components/Logo.svelte';
 	import type { Os } from '#lib/platform/detect.ts';
+	import { VERSION_LABEL } from '#lib/platform/version.ts';
 	import {
 		disconnectNote,
 		failureText,
@@ -23,6 +25,7 @@
 	let preparing = $state(false);
 	let recovering = $state(false);
 	let reuse = $state(false);
+	let help = $state(false);
 
 	const inProgress = $derived(session.phase === 'choosing' || session.step !== null);
 	const failure = $derived(session.failure);
@@ -57,7 +60,10 @@
 </script>
 
 <section class="connect">
-	<h1><Logo size={44} /></h1>
+	<header>
+		<h1><Logo size={44} /></h1>
+		<button class="help" aria-label="Help" aria-haspopup="dialog" onclick={() => (help = true)}>?</button>
+	</header>
 
 	{#if inProgress}
 		<div class="card">
@@ -126,10 +132,10 @@
 		</div>
 	{:else}
 		{#if note}
-			<div class="card" role="status">
-				<h2>Disconnected</h2>
-				<p class="hint">{note}</p>
-			</div>
+			<p class="note" role="status">
+				Disconnected. This computer may still hold the Bluetooth link.
+				<button class="link" onclick={() => (help = true)}>Free the camera</button>
+			</p>
 		{/if}
 		{#if text && failure?.kind !== 'bond-stale'}
 			<div class="card" class:error={failure?.kind !== 'chooser-cancelled'} role="alert">
@@ -148,21 +154,15 @@
 					<button class="primary" onclick={() => start(false)}>Connect a camera</button>
 				{/if}
 			</div>
-			<p class="hint first-time">
-				Already paired with this computer? It connects without a PIN.
-				{#if os === 'linux' || os === 'chromeos'}
-					First time: {pinHint(os)}
-				{:else}
-					First time: the camera shows a 6-digit PIN and you have about 30 seconds to type it in.
-					{pinHint(os)}
-				{/if}
+			<p class="first-time">
+				<button class="link" onclick={() => (help = true)}>First time connecting?</button>
 			</p>
 		</div>
 	{/if}
 
-	<p class="disclaimer">
-		MagicRemote is an independent project, not affiliated with or endorsed by Blackmagic Design.
-	</p>
+	<p class="version">{VERSION_LABEL}</p>
+
+	<HelpDialog {os} bind:open={help} />
 </section>
 
 <style>
@@ -174,9 +174,45 @@
 		flex-direction: column;
 		gap: var(--gap);
 	}
-	h1 {
+	header {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
 		margin: 8px 0;
+	}
+	h1 {
+		margin: 0;
 		font-size: 1.5rem;
+	}
+	.help {
+		width: 44px;
+		height: 44px;
+		padding: 0;
+		border-radius: 50%;
+		font-weight: 700;
+		color: var(--text-dim);
+	}
+	.help:hover {
+		color: var(--accent);
+		border-color: var(--accent);
+	}
+	.link {
+		min-height: 0;
+		padding: 4px 0;
+		background: none;
+		border: none;
+		color: var(--text-dim);
+		font-size: 0.9rem;
+		text-decoration: underline;
+		text-underline-offset: 3px;
+	}
+	.note {
+		margin: 0;
+		color: var(--text-dim);
+		font-size: 0.9rem;
+	}
+	.link:hover {
+		color: var(--accent);
 	}
 	h2 {
 		margin: 0 0 8px;
@@ -210,8 +246,7 @@
 		color: var(--text-dim);
 	}
 	.card p.first-time {
-		margin: 12px 0 0;
-		font-size: 0.9rem;
+		margin: 8px 0 0;
 	}
 	.detail {
 		font-family: var(--mono);
@@ -234,8 +269,12 @@
 		color: var(--text);
 		font-weight: 600;
 	}
-	.disclaimer {
-		font-size: 0.8rem;
+	.version {
+		margin: 0;
+		text-align: center;
+		font-family: var(--mono);
+		font-size: 0.75rem;
 		color: var(--text-dim);
+		opacity: 0.7;
 	}
 </style>
