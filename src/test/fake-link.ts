@@ -1,10 +1,20 @@
 import { LinkError, type CameraLink, type CharacteristicId, type Unsubscribe } from '../lib/transport/link.ts';
-import { toHex } from '../lib/protocol/codec.ts';
+import { encode, toHex } from '../lib/protocol/codec.ts';
 
 /**
  * Minimal in-memory CameraLink for domain tests. Not a camera simulator: it records what the
- * session does and lets the test decide every outcome and every notification.
+ * session does and lets the test decide every outcome and every notification. Two camera habits
+ * are built in because the session depends on them: a Camera Status 0x01 write makes it resend
+ * `powerOnBurst`, and (with `recordBehaviour: 'camera'`) a record write is echoed by 10.1 only
+ * when the transport mode changes.
  */
+
+export interface TimedNotification {
+	/** ms after the Camera Status 0x01 write */
+	at: number;
+	ch: CharacteristicId;
+	bytes: Uint8Array;
+}
 
 /** 'ok', an error to throw, or a promise to wait for first (resolve = ok, reject = throw). */
 export type Outcome = 'ok' | Error | Promise<void>;
@@ -41,12 +51,25 @@ export class FakeLink implements CameraLink {
 	subscribePlan: Partial<Record<CharacteristicId, Outcome[]>> = {};
 	/** Called after every successful write, e.g. to schedule an echo. */
 	onWrite: ((ch: CharacteristicId, data: Uint8Array) => void) | null = null;
+	/** Resent after a Camera Status 0x01 write (preceded by Status 0x01). Empty: no reaction. */
+	powerOnBurst: readonly TimedNotification[] = [];
+	/** The camera's transport mode; the 10.1 reports in `powerOnBurst` carry it. null: as recorded. */
+	mode: number | null = null;
+	/**
+	 * 'manual': record writes are only acked (tests use `onWrite`). 'camera': the mode follows the
+	 * write and 10.1 is echoed only on a change. 'ignore': acked, mode unchanged, no echo.
+	 */
+	recordBehaviour: 'manual' | 'camera' | 'ignore' = 'manual';
+	echoDelayMs = 100;
+	/** Status 0x01 writes seen. */
+	powerOnWrites = 0;
 
 	connectCount = 0;
 	inFlight = 0;
 	maxInFlight = 0;
 	readonly #subs = new Map<CharacteristicId, (b: Uint8Array) => void>();
 	readonly #onDown = new Set<() => void>();
+	readonly #timers = new Set<ReturnType<typeof setTimeout>>();
 
 	constructor(name = 'A:1A2B3C4D') {
 		this.name = name;
@@ -69,6 +92,8 @@ export class FakeLink implements CameraLink {
 	drop(): void {
 		this.connected = false;
 		this.#subs.clear();
+		for (const t of this.#timers) clearTimeout(t);
+		this.#timers.clear();
 		for (const l of [...this.#onDown]) l();
 	}
 
@@ -87,6 +112,7 @@ export class FakeLink implements CameraLink {
 			await play(this.writePlan[ch]?.shift());
 			this.#requireConnected();
 			this.writes.push({ ch, data: new Uint8Array(data) });
+			this.#react(ch, data);
 			this.onWrite?.(ch, data);
 		});
 	}
@@ -121,6 +147,42 @@ export class FakeLink implements CameraLink {
 
 	outgoing(): Uint8Array[] {
 		return this.writes.filter((w) => w.ch === 'outgoing').map((w) => w.data);
+	}
+
+	/** A 10.1 report as the camera sends it. */
+	static transportReport(mode: number, rest: readonly number[] = [0, 16, 0, 1, 3]): Uint8Array {
+		return encode({ group: 10, param: 1, type: 'int8', op: 'status', values: [mode, ...rest] });
+	}
+
+	#later(ms: number, fn: () => void): void {
+		const t = setTimeout(() => {
+			this.#timers.delete(t);
+			fn();
+		}, ms);
+		this.#timers.add(t);
+	}
+
+	#react(ch: CharacteristicId, data: Uint8Array): void {
+		if (ch === 'status' && data[0] === 0x01) {
+			this.powerOnWrites++;
+			if (!this.powerOnBurst.length) return;
+			this.#later(0, () => this.emit('status', new Uint8Array([0x01])));
+			for (const e of this.powerOnBurst) this.#later(e.at, () => this.emit(e.ch, this.#withMode(e.bytes)));
+			return;
+		}
+		const isRecord = ch === 'outgoing' && data[4] === 10 && data[5] === 1;
+		if (!isRecord || this.recordBehaviour === 'manual' || this.recordBehaviour === 'ignore') return;
+		const target = data[8];
+		if (target === this.mode) return;
+		this.mode = target;
+		this.#later(this.echoDelayMs, () => this.emit('incoming', FakeLink.transportReport(target)));
+	}
+
+	#withMode(bytes: Uint8Array): Uint8Array {
+		if (this.mode === null || bytes[4] !== 10 || bytes[5] !== 1) return bytes;
+		const out = new Uint8Array(bytes);
+		out[8] = this.mode;
+		return out;
 	}
 
 	#requireConnected(): void {

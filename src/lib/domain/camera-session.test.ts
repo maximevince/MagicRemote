@@ -2,20 +2,21 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { buildRecordPacket, encode, toHex } from '../protocol/index.ts';
 import { LinkError } from '../transport/link.ts';
 import { deferred, FakeLink } from '../../test/fake-link.ts';
-import { BURST, MODEL_BYTES, PROTOCOL_BYTES, READY_INDEX, TIMECODE_SAMPLE } from '../../test/fixture.ts';
-import { CameraSession, type HandshakeStep, type SessionConfig } from './camera-session.svelte.ts';
+import { BURST, MODEL_BYTES, POWER_ON_BURST, PROTOCOL_BYTES, READY_INDEX, TIMECODE_SAMPLE } from '../../test/fixture.ts';
+import { CameraSession, type HandshakeStep, type SessionConfig, type SessionPhase } from './camera-session.svelte.ts';
 import { MemoryKnownCameras } from './known-cameras.ts';
 
 const KEY = '1A2B3C4D';
 const advance = (ms: number) => vi.advanceTimersByTimeAsync(ms);
 
-function transportReport(mode: number, rest: number[] = [0, 16, 0, 1, 3]): Uint8Array {
-	return encode({ group: 10, param: 1, type: 'int8', op: 'status', values: [mode, ...rest] });
-}
+const transportReport = (mode: number) => FakeLink.transportReport(mode);
+const RESYNC_WRITE = 'write status 01';
 
 function harness(opts: { known?: boolean; config?: Partial<SessionConfig> } = {}) {
 	const link = new FakeLink();
 	link.reads = { model: MODEL_BYTES, protocolVersion: PROTOCOL_BYTES };
+	// Like a link the browser kept up: nothing arrives on subscribing, the resync write brings the burst.
+	link.powerOnBurst = POWER_ON_BURST;
 	const known = new MemoryKnownCameras();
 	if (opts.known) known.remember(KEY, { name: 'A:1A2B3C4D', model: null, lastSeen: 0 });
 	const requestLink = vi.fn(async () => link);
@@ -41,6 +42,16 @@ function harness(opts: { known?: boolean; config?: Partial<SessionConfig> } = {}
 		expect(session.step).toBe(step);
 	};
 
+	const untilPhase = async (phase: SessionPhase, maxMs = 60_000) => {
+		for (let t = 0; t < maxMs && session.phase !== phase; t += 10) await advance(10);
+		expect(session.phase).toBe(phase);
+	};
+
+	const untilSynced = async (maxMs = 20_000) => {
+		for (let t = 0; t < maxMs && session.syncing; t += 10) await advance(10);
+		expect(session.syncing).toBe(false);
+	};
+
 	/** Replay the captured notifications up to and including the Camera Status ready flag. */
 	const replayBurst = async (count = READY_INDEX + 1) => {
 		let now = 0;
@@ -54,13 +65,26 @@ function harness(opts: { known?: boolean; config?: Partial<SessionConfig> } = {}
 
 	const toReady = async () => {
 		void session.connect();
-		await untilStep('syncing');
-		await replayBurst();
-		expect(session.phase).toBe('ready');
+		await untilPhase('ready');
 		ticking(true);
 	};
 
-	return { link, known, session, requestLink, ticking, echoRecord, untilStep, replayBurst, toReady };
+	const resyncWrites = () => link.ops.filter((o) => o === RESYNC_WRITE).length;
+
+	return {
+		link,
+		known,
+		session,
+		requestLink,
+		ticking,
+		echoRecord,
+		untilStep,
+		untilPhase,
+		untilSynced,
+		replayBurst,
+		toReady,
+		resyncWrites
+	};
 }
 
 beforeEach(() => {
@@ -82,9 +106,9 @@ describe('CameraSession: handshake', () => {
 			'read protocolVersion',
 			`write deviceName ${toHex(new TextEncoder().encode('MagicRemote'))}`,
 			'subscribe status',
-			'write status 01',
 			'subscribe incoming',
-			'subscribe timecode'
+			'subscribe timecode',
+			RESYNC_WRITE
 		]);
 		expect(h.link.maxInFlight).toBe(1);
 		expect(s.state.model).toBe('Pocket Cinema Camera 6K G2');
@@ -105,6 +129,7 @@ describe('CameraSession: handshake', () => {
 
 	it('stays in syncing until Camera Status reports ready, even after 10.1 arrived', async () => {
 		const h = harness();
+		h.link.powerOnBurst = [];
 		void h.session.connect();
 		await h.untilStep('syncing');
 		await h.replayBurst(READY_INDEX);
@@ -128,10 +153,54 @@ describe('CameraSession: handshake', () => {
 		await h.untilStep('syncing');
 	});
 
-	it('does not write power-on when reconnecting to a known camera', async () => {
+	it('resyncs on every connect, a known camera included', async () => {
 		const h = harness({ known: true });
 		await h.toReady();
-		expect(h.link.ops).not.toContain('write status 01');
+		expect(h.resyncWrites()).toBe(1);
+		expect(h.session.syncing).toBe(false);
+		expect(h.session.record.display).toBe('preview');
+	});
+
+	it('attaches to a live link with no burst, resyncs and shows the real state', async () => {
+		const h = harness({ known: true });
+		h.link.mode = 2;
+		void h.session.connect();
+		await h.untilStep('syncing');
+		// Nothing arrives on its own.
+		await advance(0);
+		expect(h.session.state.transportMode).toBeNull();
+		expect(h.session.log.records.some((r) => r.kind === 'in' && r.ch === 'incoming')).toBe(false);
+		await h.untilPhase('ready');
+		const ops = h.link.ops;
+		expect(ops.indexOf(RESYNC_WRITE)).toBeGreaterThan(ops.indexOf('subscribe timecode'));
+		expect(h.session.syncIncomplete).toBe(false);
+		h.ticking(true);
+		expect(h.session.record.display).toBe('recording');
+		expect(h.session.record.alert).toBeNull();
+	});
+
+	it('can skip the resync on connect (?resync=0), then takes the burst of a fresh link', async () => {
+		const h = harness({ config: { resyncOnConnect: false } });
+		void h.session.connect();
+		await h.untilStep('syncing');
+		await h.replayBurst();
+		expect(h.session.phase).toBe('ready');
+		expect(h.resyncWrites()).toBe(0);
+	});
+
+	it('never resyncs before the encrypted step', async () => {
+		const h = harness();
+		const pin = deferred();
+		h.link.subscribePlan.status = [pin.promise];
+		void h.session.connect();
+		await h.untilStep('pairing');
+		expect(await h.session.resync()).toBe(false);
+		expect(h.session.requestResync('tab visible')).toBe(false);
+		await advance(1000);
+		expect(h.link.writes.filter((w) => w.ch === 'status')).toHaveLength(0);
+		pin.resolve();
+		await h.untilPhase('ready');
+		expect(h.resyncWrites()).toBe(1);
 	});
 
 	it('starts only one connect attempt at a time', async () => {
@@ -167,9 +236,7 @@ describe('CameraSession: handshake', () => {
 		const h = harness();
 		h.link.readPlan = [new LinkError('disconnected', 'dropped')];
 		void h.session.connect();
-		await h.untilStep('syncing');
-		await h.replayBurst();
-		expect(h.session.phase).toBe('ready');
+		await h.untilPhase('ready');
 		expect(h.link.connectCount).toBe(2);
 	});
 
@@ -207,15 +274,20 @@ describe('CameraSession: handshake', () => {
 		expect(h.link.connectCount).toBe(1);
 	});
 
-	it('resyncs once when the initial burst is missing, then shows record state unknown', async () => {
+	it('resyncs once more when the camera state is missing, then shows record state unknown', async () => {
 		const h = harness();
+		h.link.powerOnBurst = [];
 		void h.session.connect();
 		await h.untilStep('syncing');
 		h.ticking(true);
-		await advance(5000);
-		expect(h.link.ops.slice(-2)).toEqual(['unsubscribe incoming', 'subscribe incoming']);
+		await advance(100);
+		expect(h.resyncWrites()).toBe(1);
+		await advance(4900);
+		expect(h.resyncWrites()).toBe(2);
+		expect(h.link.ops).not.toContain('unsubscribe incoming');
 		expect(h.session.phase).toBe('syncing');
 		await advance(5000);
+		expect(h.resyncWrites()).toBe(2);
 		expect(h.session.phase).toBe('ready');
 		expect(h.session.syncIncomplete).toBe(true);
 		expect(h.session.record.display).toBe('unknown');
@@ -223,6 +295,18 @@ describe('CameraSession: handshake', () => {
 		// The camera reports 10.1 later: the toggle comes back.
 		h.link.emit('incoming', transportReport(0));
 		expect(h.session.record.display).toBe('preview');
+	});
+
+	it('goes straight to record state unknown with ?burst=none', async () => {
+		const h = harness({ config: { burstMissing: 'none' } });
+		h.link.powerOnBurst = [];
+		void h.session.connect();
+		await h.untilStep('syncing');
+		h.ticking(true);
+		await advance(5000);
+		expect(h.session.phase).toBe('ready');
+		expect(h.session.syncIncomplete).toBe(true);
+		expect(h.resyncWrites()).toBe(1);
 	});
 
 	it('warns on an unknown protocol major and continues', async () => {
@@ -249,12 +333,11 @@ describe('CameraSession: link loss and reconnect', () => {
 		await advance(1);
 		await h.untilStep('syncing');
 		expect(s.phase).toBe('reconnecting');
-		await h.replayBurst();
-		expect(s.phase).toBe('ready');
+		await h.untilPhase('ready');
 		expect(s.record.display).toBe('preview');
 		expect(h.link.connectCount).toBe(2);
-		// Power-on is only written once, after the first pairing.
-		expect(h.link.ops.filter((o) => o === 'write status 01')).toHaveLength(1);
+		// The resync write goes out on every connect.
+		expect(h.resyncWrites()).toBe(2);
 	});
 
 	it('backs off 2 → 5 → 10 s while the camera is out of range', async () => {
@@ -275,9 +358,7 @@ describe('CameraSession: link loss and reconnect', () => {
 		await advance(10_000);
 		expect(h.link.connectCount).toBe(5);
 		expect(h.session.phase).toBe('reconnecting');
-		await h.untilStep('syncing', 15_000);
-		await h.replayBurst();
-		expect(h.session.phase).toBe('ready');
+		await h.untilPhase('ready', 20_000);
 	});
 
 	it('goes to bond-stale on an auth failure while reconnecting and never tries again', async () => {
@@ -333,12 +414,10 @@ describe('CameraSession: link loss and reconnect', () => {
 		await h.session.connect();
 		expect(h.session.phase).toBe('bond-stale');
 		void h.session.connect({ reuse: true, recovered: true });
-		await h.untilStep('syncing');
+		await h.untilPhase('ready');
 		expect(h.requestLink).toHaveBeenCalledTimes(1);
-		// Treated as a first pairing again.
-		expect(h.link.ops.filter((o) => o === 'write status 01')).toHaveLength(1);
-		await h.replayBurst();
-		expect(h.session.phase).toBe('ready');
+		// The failed attempt stopped at the encrypted step, before any resync write.
+		expect(h.resyncWrites()).toBe(1);
 	});
 
 	it('stops after a user disconnect and does not reconnect', async () => {
@@ -389,8 +468,15 @@ describe('CameraSession: heartbeat', () => {
 		expect(h.session.record.display).toBe('unknown');
 		expect(h.session.record.split).toBe(true);
 		expect(h.session.phase).toBe('ready');
+		expect(h.resyncWrites()).toBe(1);
 		h.ticking(true);
 		await advance(100);
+		// Reports may have been missed during the stall: resync.
+		expect(h.resyncWrites()).toBe(2);
+		expect(h.session.record.display).toBe('syncing');
+		await advance(100);
+		expect(h.session.record.display).toBe('preview');
+		await h.untilSynced();
 		expect(h.session.record.display).toBe('preview');
 	});
 
@@ -443,22 +529,77 @@ describe('RecordController (through the session)', () => {
 		expect(h.link.outgoing()).toHaveLength(2);
 	});
 
-	it('sends the retry recipe after 2 s without a 10.1, then fails at 5 s; a later 10.1 wins', async () => {
+	it('settles a stop the camera already was in: no echo, resync, satisfied, no error', async () => {
 		const h = harness();
 		await h.toReady();
+		h.link.recordBehaviour = 'camera';
+		// The app saw the take start, but missed the camera's own stop.
+		h.link.emit('incoming', transportReport(2));
+		h.link.mode = 0;
+		await advance(400);
+		const r = h.session.record;
+		expect(r.display).toBe('recording');
+		expect(r.stop()).toEqual({ ok: true });
+		await advance(1990);
+		expect(r.display).toBe('stopping');
+		expect(h.resyncWrites()).toBe(1);
+		await advance(20);
+		expect(h.resyncWrites()).toBe(2);
+		await advance(100);
+		expect(r.display).toBe('preview');
+		expect(r.error).toBeNull();
+		expect(r.alert).toBeNull();
+		expect(h.link.outgoing()).toHaveLength(1);
+		await advance(10_000);
+		expect(r.error).toBeNull();
+		expect(h.link.outgoing()).toHaveLength(1);
+	});
+
+	it('settles a start whose echo was lost: resync shows recording, no retry', async () => {
+		const h = harness();
+		await h.toReady();
+		h.link.onWrite = (ch, data) => {
+			if (ch === 'outgoing' && data[4] === 10) h.link.mode = data[8];
+		};
 		const r = h.session.record;
 		r.start();
-		await advance(1990);
+		await advance(2200);
+		expect(r.display).toBe('recording');
+		expect(r.lastRecipes).toEqual(['B']);
 		expect(h.link.outgoing()).toHaveLength(1);
-		await advance(20);
+	});
+
+	it('retries once when the resync shows the camera ignored a start, then reports the real state', async () => {
+		const h = harness();
+		await h.toReady();
+		h.link.recordBehaviour = 'ignore';
+		h.link.mode = 0;
+		const r = h.session.record;
+		r.start();
+		await advance(2010);
+		expect(h.resyncWrites()).toBe(2);
+		expect(h.link.outgoing()).toHaveLength(1);
+		expect(r.display).toBe('starting');
+		await advance(100);
+		// The burst's 10.1 says preview: the retry recipe goes out.
 		expect(h.link.outgoing()).toHaveLength(2);
 		expect(toHex(h.link.outgoing()[1])).toBe(toHex(buildRecordPacket('A', 2, [0, 0, 16, 0, 1, 3]).bytes));
 		expect(r.lastRecipes).toEqual(['B', 'A']);
 		expect(r.display).toBe('starting');
-		await advance(3000);
+		expect(r.error).toBeNull();
+		await advance(2000);
+		// The first resync is still receiving its burst; the judging one is queued behind it.
+		expect(h.resyncWrites()).toBe(2);
+		for (let t = 0; t < 10_000 && h.resyncWrites() < 3; t += 10) await advance(10);
+		expect(h.resyncWrites()).toBe(3);
+		expect(r.display).toBe('starting');
+		await advance(100);
 		expect(r.display).toBe('error');
 		expect(r.error).toMatchObject({ intent: 'start', reason: 'not-confirmed', lastMode: 0 });
 		expect(h.link.outgoing()).toHaveLength(2);
+		await h.untilSynced();
+		expect(r.display).toBe('error');
+		// A later report wins.
 		h.link.emit('incoming', transportReport(2));
 		expect(r.display).toBe('recording');
 		expect(r.error).toBeNull();
@@ -468,7 +609,7 @@ describe('RecordController (through the session)', () => {
 		const h = harness({ config: { record: { primary: 'A-prime', retry: 'B' } } });
 		await h.toReady();
 		h.session.record.start();
-		await advance(2100);
+		await advance(2200);
 		expect(h.session.record.lastRecipes).toEqual(['A-prime', 'B']);
 		expect(toHex(h.link.outgoing()[1])).toBe('ff0500000a01010002000000');
 	});
@@ -532,8 +673,7 @@ describe('RecordController (through the session)', () => {
 		h.link.drop();
 		expect(h.session.record.display).toBe('unknown');
 		await advance(2000);
-		await h.untilStep('syncing');
-		await h.replayBurst();
+		await h.untilPhase('ready');
 		expect(h.session.record.display).toBe('preview');
 		expect(h.session.record.alert?.kind).toBe('unrequested-stop');
 	});
@@ -544,12 +684,137 @@ describe('RecordController (through the session)', () => {
 		await h.toReady();
 		h.ticking(false);
 		await advance(1300);
+		expect(h.session.record.split).toBe(true);
+	});
+
+	it('resyncs before acting on a press with the state unknown, and sends nothing when already there', async () => {
+		const h = harness();
+		await h.toReady();
+		h.ticking(false);
+		await advance(1300);
 		const r = h.session.record;
-		expect(r.split).toBe(true);
-		h.echoRecord(50);
+		expect(r.display).toBe('unknown');
 		h.ticking(true);
 		expect(r.stop()).toEqual({ ok: true });
-		await advance(100);
+		expect(r.display).toBe('stopping');
+		await advance(200);
+		expect(h.resyncWrites()).toBe(2);
 		expect(r.display).toBe('preview');
+		expect(h.link.outgoing()).toHaveLength(0);
+		expect(r.error).toBeNull();
+	});
+
+	it('resyncs before a start with the state unknown, then sends on the real state', async () => {
+		const h = harness();
+		h.link.powerOnBurst = [];
+		void h.session.connect();
+		await h.untilStep('syncing');
+		h.ticking(true);
+		await advance(10_000);
+		const r = h.session.record;
+		expect(h.session.syncIncomplete).toBe(true);
+		expect(r.display).toBe('unknown');
+		// The camera answers this time.
+		h.link.powerOnBurst = POWER_ON_BURST;
+		h.link.recordBehaviour = 'camera';
+		h.link.mode = 0;
+		expect(r.start()).toEqual({ ok: true });
+		expect(r.display).toBe('starting');
+		await advance(1000);
+		// A start waits for the whole burst, so the media check uses current values.
+		expect(h.link.outgoing()).toHaveLength(0);
+		await h.untilSynced();
+		expect(h.session.syncIncomplete).toBe(false);
+		await advance(10);
+		expect(h.link.outgoing()).toHaveLength(1);
+		expect(r.notice).toBeNull();
+		await advance(200);
+		expect(r.display).toBe('recording');
+	});
+
+});
+
+describe('CameraSession: resync', () => {
+	it('marks the state stale until the camera resends it', async () => {
+		const h = harness();
+		await h.toReady();
+		const s = h.session;
+		const done = s.resync('test');
+		expect(s.syncing).toBe(true);
+		expect(s.state.transport.fresh).toBe(false);
+		expect(s.record.display).toBe('syncing');
+		expect(s.record.split).toBe(false);
+		await advance(100);
+		expect(s.record.display).toBe('preview');
+		expect(s.syncing).toBe(true);
+		await h.untilSynced();
+		await expect(done).resolves.toBe(true);
+		expect(s.state.batteryPercent).toBe(100);
+	});
+
+	it('coalesces concurrent resync requests into one write', async () => {
+		const h = harness();
+		await h.toReady();
+		const s = h.session;
+		const a = s.resync('a');
+		const b = s.resync('b');
+		expect(b).toBe(a);
+		expect(s.requestResync('tab visible')).toBe(true);
+		await advance(1000);
+		expect(s.resync('c')).toBe(a);
+		await h.untilSynced();
+		await expect(a).resolves.toBe(true);
+		expect(h.resyncWrites()).toBe(2);
+		expect(h.link.maxInFlight).toBe(1);
+	});
+
+	it('debounces tab-return resyncs', async () => {
+		const h = harness();
+		await h.toReady();
+		const s = h.session;
+		expect(s.requestResync('tab visible')).toBe(true);
+		await h.untilSynced();
+		expect(h.resyncWrites()).toBe(2);
+		expect(s.requestResync('tab visible')).toBe(false);
+		expect(h.resyncWrites()).toBe(2);
+		await advance(1000);
+		expect(s.requestResync('tab visible')).toBe(true);
+		await advance(10);
+		expect(h.resyncWrites()).toBe(3);
+	});
+
+	it('resolves false when the camera does not resend, and leaves the state unknown', async () => {
+		const h = harness();
+		await h.toReady();
+		h.link.powerOnBurst = [];
+		const done = h.session.resync();
+		await advance(5000);
+		await expect(done).resolves.toBe(false);
+		expect(h.session.syncing).toBe(false);
+		expect(h.session.record.display).toBe('unknown');
+		h.link.emit('incoming', transportReport(0));
+		expect(h.session.record.display).toBe('preview');
+	});
+
+	it('does not resync in standby (the write would switch the camera on)', async () => {
+		const h = harness();
+		await h.toReady();
+		h.link.emit('status', new Uint8Array([0x00]));
+		expect(h.session.phase).toBe('standby');
+		await expect(h.session.resync()).resolves.toBe(false);
+		expect(h.session.requestResync('tab visible')).toBe(false);
+		expect(h.resyncWrites()).toBe(1);
+	});
+
+	it('ends a resync cleanly when the link drops during it', async () => {
+		const h = harness();
+		await h.toReady();
+		const done = h.session.resync();
+		await advance(20);
+		h.ticking(false);
+		h.link.drop();
+		await expect(done).resolves.toBe(false);
+		expect(h.session.syncing).toBe(false);
+		expect(h.session.phase).toBe('reconnecting');
 	});
 });

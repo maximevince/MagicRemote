@@ -42,6 +42,17 @@
 		return () => window.removeEventListener('beforeunload', guard);
 	});
 
+	// Notifications may have been missed while the tab was in the background.
+	$effect(() => {
+		const s = session;
+		if (!s) return;
+		const onVisibility = () => {
+			if (document.visibilityState === 'visible') s.requestResync('tab visible');
+		};
+		document.addEventListener('visibilitychange', onVisibility);
+		return () => document.removeEventListener('visibilitychange', onVisibility);
+	});
+
 	$effect(() => {
 		if (session?.phase !== 'reconnecting') return;
 		now = Date.now();

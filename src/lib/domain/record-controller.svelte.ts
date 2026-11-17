@@ -4,15 +4,20 @@ import type { CameraState } from './camera-state.svelte.ts';
 /**
  * Record start/stop. The button shows what the camera reports, never what
  * was requested: it turns red only on a 10.1 report with mode 2.
+ *
+ * The camera sends 10.1 only when the transport mode changes, so an acknowledged write without
+ * an echo is ambiguous (ignored, or already in that mode). It is settled by a session resync,
+ * whose burst starts with 10.1: the requested mode means done; otherwise the retry recipe is
+ * sent once, and if that too ends without the requested mode after a resync, it is an error.
  */
 
 export interface RecordConfig {
 	/** Recipe sent first. Which one the Pocket 6K G2 needs is still open. */
 	primary: RecordRecipe;
-	/** Recipe sent once if no 10.1 arrives within `confirmMs` of the first ack. */
+	/** Recipe sent once if the resync after the first write shows another mode. */
 	retry: RecordRecipe;
+	/** Wait this long after an ack for a 10.1 echo before resyncing. */
 	confirmMs: number;
-	failMs: number;
 	/** Presses are ignored this long after the displayed state flipped. */
 	pressGuardMs: number;
 }
@@ -21,11 +26,18 @@ export const DEFAULT_RECORD_CONFIG: RecordConfig = {
 	primary: 'B',
 	retry: 'A',
 	confirmMs: 2000,
-	failMs: 5000,
 	pressGuardMs: 300
 };
 
-export type RecordDisplay = 'unknown' | 'preview' | 'playback' | 'starting' | 'recording' | 'stopping' | 'error';
+export type RecordDisplay =
+	| 'unknown'
+	| 'syncing'
+	| 'preview'
+	| 'playback'
+	| 'starting'
+	| 'recording'
+	| 'stopping'
+	| 'error';
 export type RecordIntent = 'start' | 'stop';
 
 export type PressResult =
@@ -56,17 +68,31 @@ export interface RecordDeps {
 	connected(): boolean;
 	/** Connected and the heartbeat is fresh, so reported values are current. */
 	live(): boolean;
+	/** A session resync is running. */
+	syncing(): boolean;
+	/**
+	 * Session resync; true when the camera resent its state. Joins a running one, or with `after`
+	 * runs a new one behind it, so the result reflects the writes sent before the call.
+	 */
+	resync(after: boolean): Promise<boolean>;
 	/** Send on the urgent lane; resolves when the write is acknowledged. */
 	send(bytes: Uint8Array, label: string): Promise<void>;
 	now?: () => number;
 	config?: Partial<RecordConfig>;
 }
 
+/**
+ * presync: state was unknown at the press, resyncing before acting.
+ * sent / retry: write sent, waiting for an echo. resync / final: resyncing to judge.
+ */
+type Stage = 'presync' | 'sent' | 'resync' | 'retry' | 'final';
+
 interface PendingOp {
 	target: 0 | 2;
+	stage: Stage;
 	acked: boolean;
 	recipes: RecordRecipe[];
-	timers: ReturnType<typeof setTimeout>[];
+	timer: ReturnType<typeof setTimeout> | null;
 }
 
 export class RecordController {
@@ -98,7 +124,7 @@ export class RecordController {
 		if (!this.#deps.live()) return 'unknown';
 		if (this.error) return 'error';
 		const t = this.#deps.state.transport;
-		if (!t.fresh) return 'unknown';
+		if (!t.fresh) return this.#deps.syncing() ? 'syncing' : 'unknown';
 		switch (this.#deps.state.transportMode) {
 			case TransportMode.record:
 				return 'recording';
@@ -116,9 +142,14 @@ export class RecordController {
 		return this.display === 'unknown';
 	}
 
+	/** With the state unknown, resyncs first and acts on what the camera then reports. */
 	start(): PressResult {
 		const guard = this.#guard();
 		if (guard) return guard;
+		if (this.#unsure()) {
+			this.#presync(TransportMode.record);
+			return { ok: true };
+		}
 		const refusal = this.#preflight();
 		if (refusal) return refusal;
 		this.#begin(TransportMode.record);
@@ -131,21 +162,27 @@ export class RecordController {
 		if (guard) return guard;
 		this.notice = null;
 		this.#stopRequested = true;
-		this.#begin(TransportMode.preview);
+		if (this.#unsure()) this.#presync(TransportMode.preview);
+		else this.#begin(TransportMode.preview);
 		return { ok: true };
 	}
 
 	/** Called by the session for every accepted 10.1 report, after CameraState was updated. */
 	onTransport(values: readonly number[]): void {
 		const mode = values[0];
-		const p = this.#pending;
-		// Before the first ack the camera cannot have acted on our write yet, so only a report of
-		// the requested mode ends the request. After it, any report overrides.
-		if (p && (mode === p.target || p.acked)) this.#endPending();
 		if (this.error) {
 			this.error = null;
 			this.#flip();
 		}
+		const p = this.#pending;
+		// A stop acts on the first 10.1; a start waits for the whole burst so the media check is current.
+		if (p?.stage === 'presync') {
+			if (p.target === TransportMode.preview || this.#reached(p)) this.#act(p);
+		}
+		else if (p?.stage === 'resync' || p?.stage === 'final') this.#judge(p);
+		// Before the first ack the camera cannot have acted on our write yet, so only a report of
+		// the requested mode ends the request. After it, any report overrides.
+		else if (p && (mode === p.target || p.acked)) this.#endPending();
 		const prev = this.#lastMode;
 		if (prev === TransportMode.record && mode !== TransportMode.record) {
 			if (!this.#stopRequested) this.alert = { kind: 'unrequested-stop', at: this.#now() };
@@ -201,37 +238,83 @@ export class RecordController {
 		return null;
 	}
 
-	#begin(target: 0 | 2): void {
-		this.error = null;
-		const op: PendingOp = { target, acked: false, recipes: [], timers: [] };
-		this.#pending = op;
-		this.lastRecipes = [];
-		this.#send(op, this.config.primary, true);
+	/** The display is not a fresh camera report, so the intent cannot be checked against it. */
+	#unsure(): boolean {
+		const d = this.display;
+		return d === 'unknown' || d === 'syncing';
 	}
 
-	#send(op: PendingOp, recipe: RecordRecipe, first: boolean): void {
+	#newOp(target: 0 | 2, stage: Stage): PendingOp {
+		this.error = null;
+		const op: PendingOp = { target, stage, acked: false, recipes: [], timer: null };
+		this.#pending = op;
+		this.lastRecipes = [];
+		return op;
+	}
+
+	#begin(target: 0 | 2): void {
+		this.#send(this.#newOp(target, 'sent'), this.config.primary);
+	}
+
+	#presync(target: 0 | 2): void {
+		const op = this.#newOp(target, 'presync');
+		void this.#deps.resync(false).then(() => {
+			if (this.#pending === op && op.stage === 'presync') this.#act(op);
+		});
+	}
+
+	/** After the presync: done if the camera is already in the requested mode, else send. */
+	#act(op: PendingOp): void {
+		if (this.#reached(op)) return this.#endPending();
+		if (op.target === TransportMode.record && this.#preflight()) return this.#endPending();
+		op.stage = 'sent';
+		this.#send(op, this.config.primary);
+	}
+
+	/** After a resync (or its first 10.1): satisfied, retry once, or give up. */
+	#judge(op: PendingOp): void {
+		if (this.#reached(op)) return this.#endPending();
+		if (op.stage === 'resync') {
+			op.stage = 'retry';
+			this.#send(op, this.config.retry);
+		} else {
+			this.#fail(op, 'not-confirmed');
+		}
+	}
+
+	#reached(op: PendingOp): boolean {
+		const s = this.#deps.state;
+		return s.transport.fresh && s.transportMode === op.target;
+	}
+
+	#send(op: PendingOp, recipe: RecordRecipe): void {
+		const stage = op.stage;
 		const { bytes, recipe: used } = buildRecordPacket(recipe, op.target, this.#deps.state.transport.confirmed);
 		op.recipes.push(used);
 		this.lastRecipes = [...op.recipes];
 		const label = `record ${op.target === TransportMode.record ? 'start' : 'stop'} (${used})`;
 		this.#deps.send(bytes, label).then(
 			() => {
-				if (this.#pending !== op || !first) return;
+				if (this.#pending !== op || op.stage !== stage) return;
 				op.acked = true;
-				op.timers.push(
-					setTimeout(() => {
-						if (this.#pending === op) this.#send(op, this.config.retry, false);
-					}, this.config.confirmMs),
-					setTimeout(() => {
-						if (this.#pending === op) this.#fail(op, 'not-confirmed');
-					}, this.config.failMs)
-				);
+				op.timer = setTimeout(() => {
+					op.timer = null;
+					if (this.#pending === op && op.stage === stage) this.#resyncToJudge(op);
+				}, this.config.confirmMs);
 			},
 			(e: unknown) => {
-				// A failed retry leaves the fail timer of the first write running.
-				if (this.#pending === op && first) this.#fail(op, 'write-failed', e instanceof Error ? e.message : String(e));
+				if (this.#pending === op && op.stage === stage) this.#fail(op, 'write-failed', e instanceof Error ? e.message : String(e));
 			}
 		);
+	}
+
+	/** Acked but no echo: the camera may have ignored it or already been in that mode. */
+	#resyncToJudge(op: PendingOp): void {
+		const stage: Stage = op.stage === 'sent' ? 'resync' : 'final';
+		op.stage = stage;
+		void this.#deps.resync(true).then(() => {
+			if (this.#pending === op && op.stage === stage) this.#judge(op);
+		});
 	}
 
 	#fail(op: PendingOp, reason: RecordError['reason'], detail?: string): void {
@@ -251,7 +334,7 @@ export class RecordController {
 	#endPending(): void {
 		const p = this.#pending;
 		if (!p) return;
-		for (const t of p.timers) clearTimeout(t);
+		if (p.timer !== null) clearTimeout(p.timer);
 		this.#pending = null;
 		this.#flip();
 	}

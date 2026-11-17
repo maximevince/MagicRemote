@@ -19,7 +19,7 @@
 		<span class="dot {tone}" aria-hidden="true"></span>
 		<div>
 			<div class="name">{session.name ?? 'Camera'}</div>
-			<div class="sub">{PHASE_LABEL[session.phase]}{s.model ? ` · ${s.model}` : ''}</div>
+			<div class="sub">{session.syncing ? 'Syncing' : PHASE_LABEL[session.phase]}{s.model ? ` · ${s.model}` : ''}</div>
 		</div>
 	</div>
 	<div class="facts">

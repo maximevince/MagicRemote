@@ -21,6 +21,7 @@ import { RecordController, type RecordConfig } from './record-controller.svelte.
  * idle → choosing → connecting → identifying → naming → pairing → subscribing → syncing → ready
  * (or standby). After a link loss: reconnecting, which runs the same handshake on the kept
  * device until it is back. Side exits: pairing-failed, bond-stale, failed, disconnected.
+ * While ready, `resync()` asks the camera to resend its whole state (see `#writeResync`).
  *
  * Hard rules: nothing here unpairs or forgets a device; a known camera is
  * never paired again automatically (any auth or encryption failure on it is `bond-stale`, which
@@ -74,11 +75,11 @@ export interface SessionConfig {
 	retryCleanupMs: number;
 	/** Reconnect backoff; the last value repeats while the page lives. */
 	reconnectDelaysMs: readonly number[];
-	/** No 10.1 this long into syncing ⇒ `burstMissing` action. */
+	/** No 10.1 this long into a sync ⇒ `burstMissing` action (handshake) or give up (resync). */
 	burstMissingMs: number;
-	/** Whether resubscribing to Incoming re-triggers the initial burst is untested (M0). */
-	burstMissing: 'resubscribe' | 'none';
-	/** Give up waiting for the Camera Status ready bit and continue with what arrived. */
+	/** During the handshake: 'resync' writes Camera Status 0x01 once more; 'none' gives up at once. */
+	burstMissing: 'resync' | 'none';
+	/** Give up waiting for the Camera Status ready bit and continue with what arrived (handshake and resync). */
 	syncTimeoutMs: number;
 	/** No timecode/battery/indication this long ⇒ reported values are not current (record shows unknown). */
 	heartbeatStaleMs: number;
@@ -87,8 +88,10 @@ export interface SessionConfig {
 	heartbeatCheckMs: number;
 	/** Whether timecode ticks in standby is untested (M0); off: no lost-link detection in standby. */
 	heartbeatInStandby: boolean;
-	/** Write Camera Status 0x01 once after the first pairing. */
-	powerOnAfterFirstPairing: boolean;
+	/** Write Camera Status 0x01 on every connect, so the camera resends its full state. */
+	resyncOnConnect: boolean;
+	/** Automatic resyncs (tab return, heartbeat back after a stall) start at most this often. */
+	autoResyncMinIntervalMs: number;
 	/** Protocol Version majors we know; others get a warning. */
 	knownProtocolMajors: readonly string[];
 	record?: Partial<RecordConfig>;
@@ -102,13 +105,14 @@ export const DEFAULT_SESSION_CONFIG: SessionConfig = {
 	retryCleanupMs: 1000,
 	reconnectDelaysMs: [2000, 5000, 10_000],
 	burstMissingMs: 5000,
-	burstMissing: 'resubscribe',
+	burstMissing: 'resync',
 	syncTimeoutMs: 15_000,
 	heartbeatStaleMs: 1000,
 	heartbeatLostMs: 6000,
 	heartbeatCheckMs: 250,
 	heartbeatInStandby: false,
-	powerOnAfterFirstPairing: true,
+	resyncOnConnect: true,
+	autoResyncMinIntervalMs: 5000,
 	knownProtocolMajors: ['0']
 };
 
@@ -181,6 +185,8 @@ export class CameraSession {
 	/** Synced without a 10.1: record state is unknown, the UI shows separate Start and Stop. */
 	syncIncomplete = $state(false);
 	heartbeatFresh = $state(false);
+	/** A resync is running: reported values are current again one by one as the camera resends them. */
+	syncing = $state(false);
 	reconnectAttempt = $state(0);
 	nextReconnectAt = $state<number | null>(null);
 
@@ -205,6 +211,13 @@ export class CameraSession {
 	#graceUntil = 0;
 	#seenTransport = false;
 	#readySeen = false;
+	/** A sync is waiting for the Camera Status ready bit. */
+	#awaitReady = false;
+	/** The current connection passed the first encrypted operation (the bond is in use). */
+	#encrypted = false;
+	#resync: Promise<boolean> | null = null;
+	#queuedResync: Promise<boolean> | null = null;
+	#lastAutoResyncAt = -Infinity;
 	#syncCheck: (() => void) | null = null;
 	#syncAbort: ((e: unknown) => void) | null = null;
 
@@ -218,6 +231,8 @@ export class CameraSession {
 			state: this.state,
 			connected: () => this.phase === 'ready',
 			live: () => this.live,
+			syncing: () => this.syncing,
+			resync: (after) => this.resync('record', { after }),
 			send: (bytes, label) => this.#sendRecord(bytes, label),
 			now: this.#now,
 			config: this.config.record
@@ -275,6 +290,7 @@ export class CameraSession {
 	/** User disconnect (or cancelling a reconnect). Frees the camera for another controller. */
 	async disconnect(): Promise<void> {
 		this.#linkUp = false;
+		this.#encrypted = false;
 		this.#run++;
 		this.#conn++;
 		this.#busy = false;
@@ -292,6 +308,56 @@ export class CameraSession {
 		} catch {
 			/* already gone */
 		}
+	}
+
+	/**
+	 * Ask the camera to resend its whole state. The state is marked stale until it is reported
+	 * again. Resolves true once 10.1 and the Camera Status ready bit arrived, false if the camera
+	 * did not resend or the link went away. A call during a running resync joins it, unless
+	 * `after` is set: then the result must reflect something done before this call, so a new
+	 * resync is queued behind the running one (one queued at most; later calls join it).
+	 * Only while ready: in standby the write would switch the camera on.
+	 */
+	resync(reason = 'requested', opts: { after?: boolean } = {}): Promise<boolean> {
+		if (this.#resync && opts.after) {
+			return (this.#queuedResync ??= this.#resync.then(() => {
+				this.#queuedResync = null;
+				return this.resync(reason);
+			}));
+		}
+		if (this.#resync) return this.#resync;
+		if (this.phase !== 'ready' || this.#busy || !this.#linkUp || !this.#encrypted) return Promise.resolve(false);
+		const token = this.#conn;
+		const op = <T>(task: QueueTask<T>): Promise<T> =>
+			token !== this.#conn ? Promise.reject(new Superseded()) : this.queue.push(task);
+		this.log.add('session', { msg: `resync (${reason})` });
+		this.syncing = true;
+		this.#seenTransport = false;
+		this.#readySeen = false;
+		this.state.markStale();
+		const p: Promise<boolean> = this.#sync(token, op, { write: true, retryOnMissing: false, armAfterWrite: true })
+			.then(
+				() => !this.syncIncomplete,
+				() => false
+			)
+			.finally(() => {
+				if (this.#resync !== p) return;
+				this.#resync = null;
+				this.syncing = false;
+			});
+		this.#resync = p;
+		return p;
+	}
+
+	/** Resync after an event that may have hidden reports (tab return, heartbeat back), at most once per interval. */
+	requestResync(reason: string): boolean {
+		if (this.#resync) return true;
+		if (this.phase !== 'ready') return false;
+		const t = this.#now();
+		if (t - this.#lastAutoResyncAt < this.config.autoResyncMinIntervalMs) return false;
+		this.#lastAutoResyncAt = t;
+		void this.resync(reason);
+		return true;
 	}
 
 	/** Skip the backoff wait. */
@@ -402,6 +468,7 @@ export class CameraSession {
 		const cfg = this.config;
 		this.#seenTransport = false;
 		this.#readySeen = false;
+		this.#encrypted = false;
 		this.syncIncomplete = false;
 		this.#unsubs.clear();
 		const at = (s: HandshakeStep) => {
@@ -442,26 +509,23 @@ export class CameraSession {
 
 			// The first encrypted operation: may trigger pairing and block on the PIN, so no timeout.
 			at('pairing');
-			const wasKnown = this.known;
 			await this.#subscribe(op, 'status', null, (b) => this.#onStatus(token, b));
+			this.#encrypted = true;
 			this.#rememberCamera();
-			if (!wasKnown && cfg.powerOnAfterFirstPairing) {
-				try {
-					await op({ label: 'write status 0x01', run: () => link.write('status', new Uint8Array([CameraStatusBit.power])) });
-					this.log.add('out', { what: 'status', hex: '01' });
-				} catch (e) {
-					if (this.#fatal(e)) throw e;
-					this.log.add('error', { msg: `power on: ${message(e)}` });
-				}
-			}
 
 			at('subscribing');
 			await this.#subscribe(op, 'incoming', undefined, (b) => this.#onIncoming(token, b));
 			await this.#subscribe(op, 'timecode', undefined, (b) => this.#onTimecode(token, b));
 			this.#startHeartbeat();
 
+			// Everything is subscribed, so the resync burst is received. A fresh link also sends the
+			// burst on its own; whichever 10.1 and ready bit come first end the sync.
 			at('syncing');
-			await this.#sync(token, op);
+			await this.#sync(token, op, {
+				write: cfg.resyncOnConnect,
+				retryOnMissing: cfg.burstMissing === 'resync',
+				armAfterWrite: false
+			});
 
 			if (token !== this.#conn) throw new Superseded();
 			this.step = null;
@@ -501,46 +565,75 @@ export class CameraSession {
 		this.log.add('subscribed', { ch, took: (this.#now() - started) / 1000 });
 	}
 
-	/** Wait for the initial burst: 10.1 first, Camera Status ready bit at the end. */
-	#sync(token: number, op: <T>(t: QueueTask<T>) => Promise<T>): Promise<void> {
+	/**
+	 * Writing Camera Status 0x01 ("power on") makes the camera resend its whole state: Status 0x01,
+	 * the full initial burst (10.1 first), then Status 0x03. Otherwise that burst only comes on a
+	 * fresh link, and the browser often re-attaches to a link that stayed up (page reload, our
+	 * Disconnect), so this write is how the app resyncs. On a camera that is already on it has no
+	 * visible effect. Never before the encrypted step: on an unbonded link it would start pairing.
+	 */
+	async #writeResync(op: <T>(t: QueueTask<T>) => Promise<T>): Promise<void> {
+		const link = this.#link;
+		if (!link || !this.#encrypted) throw new LinkError('other', 'resync refused before the encrypted step');
+		await op({ label: 'write status 0x01', run: () => link.write('status', new Uint8Array([CameraStatusBit.power])) });
+		this.log.add('out', { what: 'status', hex: '01' });
+	}
+
+	/**
+	 * Wait for the camera's state: 10.1 first, Camera Status ready bit at the end.
+	 * `write` sends the resync write first; `armAfterWrite` counts the ready bit only after it was
+	 * acknowledged, so a ready bit still in flight from before cannot end the sync.
+	 */
+	#sync(
+		token: number,
+		op: <T>(t: QueueTask<T>) => Promise<T>,
+		opts: { write: boolean; retryOnMissing: boolean; armAfterWrite: boolean }
+	): Promise<void> {
 		const cfg = this.config;
 		return new Promise<void>((resolve, reject) => {
 			const timers: ReturnType<typeof setTimeout>[] = [];
-			let resubscribed = false;
+			let settled = false;
+			let retried = false;
 			const done = () => {
+				settled = true;
 				for (const t of timers) clearTimeout(t);
 				this.#syncCheck = null;
 				this.#syncAbort = null;
+				this.#awaitReady = false;
 			};
 			const finish = (incomplete: boolean) => {
+				if (settled) return;
 				done();
 				this.syncIncomplete = incomplete;
 				resolve();
 			};
 			this.#syncAbort = (e) => {
+				if (settled) return;
 				done();
 				reject(e);
 			};
 			this.#syncCheck = () => {
 				if (this.#seenTransport && this.#readySeen) finish(false);
 			};
-			const onMissing = async () => {
-				if (this.#seenTransport || token !== this.#conn) return;
-				if (cfg.burstMissing === 'resubscribe' && !resubscribed) {
-					resubscribed = true;
-					this.log.add('session', { msg: `no 10.1 after ${cfg.burstMissingMs} ms; resubscribing to Incoming` });
-					try {
-						const unsub = this.#unsubs.get('incoming');
-						if (unsub) await op({ label: 'unsubscribe incoming', run: unsub });
-						await this.#subscribe(op, 'incoming', undefined, (b) => this.#onIncoming(token, b));
-					} catch (e) {
-						this.#syncAbort?.(e);
-						return;
-					}
+			const write = async (what: string) => {
+				try {
+					await this.#writeResync(op);
+				} catch (e) {
+					if (this.#fatal(e)) return this.#syncAbort?.(e);
+					this.log.add('error', { msg: `${what}: ${message(e)}` });
+				}
+				if (!settled) this.#awaitReady = true;
+			};
+			const onMissing = () => {
+				if (settled || this.#seenTransport || token !== this.#conn) return;
+				if (opts.retryOnMissing && !retried) {
+					retried = true;
+					this.log.add('session', { msg: `no 10.1 after ${cfg.burstMissingMs} ms; resyncing once` });
+					void write('resync');
 					timers.push(setTimeout(onMissing, cfg.burstMissingMs));
 					return;
 				}
-				this.log.add('session', { msg: 'initial state never arrived; record state unknown' });
+				this.log.add('session', { msg: 'camera state never arrived; record state unknown' });
 				finish(true);
 			};
 			timers.push(setTimeout(onMissing, cfg.burstMissingMs));
@@ -550,6 +643,9 @@ export class CameraSession {
 					finish(!this.#seenTransport);
 				}, cfg.syncTimeoutMs)
 			);
+			if (!opts.armAfterWrite) this.#awaitReady = true;
+			if (opts.write) void write('resync on connect');
+			else if (opts.armAfterWrite) this.#awaitReady = true;
 		});
 	}
 
@@ -566,7 +662,7 @@ export class CameraSession {
 		this.#beat();
 		const b = bytes[0];
 		this.state.statusByte = b;
-		if (this.step === 'syncing' && b & CameraStatusBit.ready) {
+		if (this.#awaitReady && b & CameraStatusBit.ready) {
 			this.#readySeen = true;
 			this.#syncCheck?.();
 		}
@@ -609,7 +705,10 @@ export class CameraSession {
 
 	#beat(): void {
 		this.#lastBeatAt = this.#now();
-		if (!this.heartbeatFresh) this.heartbeatFresh = true;
+		if (this.heartbeatFresh) return;
+		this.heartbeatFresh = true;
+		// After a stall, reports may have been missed.
+		this.requestResync('heartbeat recovered');
 	}
 
 	#startHeartbeat(): void {
@@ -676,6 +775,7 @@ export class CameraSession {
 
 	#linkGone(reason: LinkError): void {
 		this.#linkUp = false;
+		this.#encrypted = false;
 		this.queue.flush(reason);
 		this.#abortSync(reason);
 		this.#stopHeartbeat();
@@ -688,6 +788,7 @@ export class CameraSession {
 	/** Fully clean up a failed attempt before another can start. */
 	async #cleanup(): Promise<void> {
 		this.#linkUp = false;
+		this.#encrypted = false;
 		this.#stopHeartbeat();
 		this.#abortSync(new QueueFlushedError('cleanup'));
 		this.queue.flush('cleanup');

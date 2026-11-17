@@ -48,3 +48,12 @@ export const BURST: readonly ReplayEvent[] = run
 export const READY_INDEX = BURST.findIndex((e) => e.ch === 'status');
 
 export const TIMECODE_SAMPLE = BURST.find((e) => e.ch === 'timecode')!.bytes;
+
+/**
+ * What the camera resends after a Camera Status 0x01 write: the captured burst up to the ready
+ * flag, starting shortly after the write (measured: Status 0x01 at once, Status 0x03 ~4.4 s later).
+ */
+export const POWER_ON_BURST: readonly ReplayEvent[] = BURST.slice(0, READY_INDEX + 1).map((e) => ({
+	...e,
+	at: e.at - BURST[0].at + 50
+}));

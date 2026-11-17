@@ -158,7 +158,12 @@ export class CameraState {
 
 	/** After a link loss: nothing shown is current any more. */
 	invalidate(): void {
-		for (const p of [this.transport, this.battery, this.media, this.remaining]) p.invalidate();
+		this.markStale();
 		this.timecode = null;
+	}
+
+	/** Reports may have been missed (resync): each parameter is current again once re-reported. */
+	markStale(): void {
+		for (const p of [this.transport, this.battery, this.media, this.remaining]) p.invalidate();
 	}
 }

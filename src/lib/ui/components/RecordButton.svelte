@@ -23,7 +23,8 @@
 		playback: 'REC',
 		starting: 'Starting…',
 		recording: 'STOP',
-		stopping: 'Stopping…'
+		stopping: 'Stopping…',
+		syncing: 'Syncing…'
 	};
 </script>
 
@@ -46,13 +47,25 @@
 			class="main {display}"
 			onclick={press}
 			onkeydown={ignoreRepeat}
-			disabled={display === 'starting' || display === 'stopping'}
-			aria-label={display === 'recording' ? 'Recording. Press to stop.' : `${display}. Press to record.`}
+			disabled={display === 'starting' || display === 'stopping' || display === 'syncing'}
+			aria-label={display === 'recording'
+				? 'Recording. Press to stop.'
+				: display === 'syncing'
+					? 'Reading the recording state from the camera.'
+					: `${display}. Press to record.`}
 		>
 			<span class="dot" aria-hidden="true"></span>{LABEL[display]}
 		</button>
 		<p class="state">
-			{display === 'recording' ? 'Recording' : display === 'playback' ? 'Playback' : display === 'preview' ? 'Standing by' : ''}
+			{display === 'recording'
+				? 'Recording'
+				: display === 'playback'
+					? 'Playback'
+					: display === 'preview'
+						? 'Standing by'
+						: display === 'syncing'
+							? 'Reading camera state'
+							: ''}
 		</p>
 	{/if}
 
@@ -101,6 +114,9 @@
 	.main.recording .dot {
 		border-radius: 3px;
 		background: #fff;
+	}
+	.main.syncing {
+		border-style: dashed;
 	}
 	.main.starting,
 	.main.stopping {
