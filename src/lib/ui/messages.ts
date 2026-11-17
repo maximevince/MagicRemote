@@ -1,6 +1,7 @@
 import type { Os } from '../platform/detect.ts';
 import type { HandshakeStep, SessionFailure, SessionPhase } from '../domain/camera-session.svelte.ts';
 import type { RecordError, RecordNotice } from '../domain/record-controller.svelte.ts';
+import type { PlaybackBlock, PlaybackError, PlaybackNotice } from '../domain/playback-controller.svelte.ts';
 
 export const LINUX_PAIRING =
 	'In a terminal: bluetoothctl, then agent KeyboardOnly, default-agent, scan on, and pair <camera address>. Type the PIN the camera shows within about 30 seconds. GNOME Settings cannot pair this camera.';
@@ -150,3 +151,36 @@ export function noticeText(n: RecordNotice): string {
 			return 'The link dropped before the camera confirmed. Check the button once reconnected.';
 	}
 }
+
+const PLAYBACK_WHAT: Record<PlaybackError['kind'], string> = {
+	enter: 'switch to playback',
+	exit: 'switch back to the camera',
+	speed: 'change play / pause',
+	loop: 'change loop',
+	playAll: 'change play all'
+};
+
+export function playbackErrorText(e: PlaybackError): string {
+	const what = PLAYBACK_WHAT[e.kind];
+	if (e.reason === 'write-failed') return `Could not ${what}${e.detail ? ` (${e.detail})` : ''}.`;
+	return `The camera did not ${what}.`;
+}
+
+export function playbackNoticeText(n: PlaybackNotice): string {
+	return n.kind === 'interrupted'
+		? 'The link dropped before the camera confirmed. Check the camera once reconnected.'
+		: 'The camera changed mode on its own, so the request was not sent.';
+}
+
+const PLAYBACK_BLOCK: Record<PlaybackBlock, string> = {
+	'not-connected': 'Not connected',
+	stale: 'No signal from the camera',
+	syncing: 'Reading camera state',
+	unknown: 'Camera state unknown',
+	busy: 'Waiting for the camera',
+	recording: 'Not while recording',
+	'record-busy': 'Waiting for the record button',
+	'not-in-playback': 'Not in playback'
+};
+
+export const playbackBlockText = (b: PlaybackBlock): string => PLAYBACK_BLOCK[b];

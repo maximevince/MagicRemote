@@ -5,3 +5,4 @@ export * from './timecode.ts';
 export * from './registry.ts';
 export * from './transport-recipes.ts';
 export * from './control-packets.ts';
+export * from './playback-packets.ts';

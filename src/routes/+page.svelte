@@ -10,6 +10,8 @@
 	import CameraBar from '#lib/ui/components/CameraBar.svelte';
 	import ConnectScreen from '#lib/ui/components/ConnectScreen.svelte';
 	import RecordButton from '#lib/ui/components/RecordButton.svelte';
+	import ClipsButton from '#lib/ui/components/ClipsButton.svelte';
+	import PlaybackPanel from '#lib/ui/components/PlaybackPanel.svelte';
 	import Timecode from '#lib/ui/components/Timecode.svelte';
 	import ControlStrip from '#lib/ui/components/ControlStrip.svelte';
 	import FormatLine from '#lib/ui/components/FormatLine.svelte';
@@ -35,6 +37,7 @@
 		!!session && (session.phase === 'ready' || session.phase === 'standby' || session.phase === 'reconnecting')
 	);
 	const recording = $derived(session?.record.display === 'recording');
+	const inPlayback = $derived(!!session?.playback.active);
 	const connected = $derived(!!session && session.phase !== 'idle' && session.phase !== 'disconnected' && session.phase !== 'failed');
 
 	// A new app version must not take over while a camera is connected.
@@ -114,18 +117,30 @@
 			<div class="banner warn">{session.protocolWarning}. Some controls may not work.</div>
 		{/if}
 
-		<div class="stage">
+		<div class="work">
+		<div class="stage" class:playback={inPlayback}>
 			<div class="readout">
 				<Timecode timecode={session.state.timecode} live={session.live} />
 				<FormatLine state={session.state} />
 			</div>
-			<RecordButton record={session.record} remaining={session.state.activeRemaining} />
+			{#if inPlayback}
+				<PlaybackPanel playback={session.playback} />
+			{:else}
+				<RecordButton record={session.record} remaining={session.state.activeRemaining} />
+			{/if}
 		</div>
 
-		<ControlStrip controls={session.controls} state={session.state} />
+		<!-- Exposure, colour and lens writes change the live camera, which nobody sees in playback. -->
+		{#if !inPlayback}
+			<ControlStrip controls={session.controls} state={session.state} />
+		{/if}
+		</div>
 
 		<footer>
 			<button onclick={() => session?.disconnect()}>Disconnect</button>
+			{#if !inPlayback}
+				<ClipsButton playback={session.playback} />
+			{/if}
 		</footer>
 	{:else if session}
 		<ConnectScreen {session} {os} />
@@ -156,14 +171,35 @@
 		margin: 0 auto;
 		padding: var(--pad);
 	}
+	.work {
+		flex: 1;
+		display: flex;
+		flex-direction: column;
+		min-height: 0;
+	}
 	.stage {
 		flex: 1;
 		display: flex;
 		flex-direction: column;
 		align-items: center;
 		justify-content: center;
-		gap: 24px;
-		padding: var(--pad);
+		gap: clamp(8px, 2.5dvh, 24px);
+		padding: clamp(8px, 2dvh, var(--pad)) var(--pad);
+	}
+	/* Short and wide (a phone on its side): readout and record on the left, controls on the right. */
+	@media (max-height: 520px) and (min-width: 600px) {
+		.work {
+			flex-direction: row;
+			align-items: center;
+		}
+		.work > :global(*) {
+			flex: 1 1 0;
+			min-width: 0;
+		}
+		.stage.playback {
+			flex-direction: row;
+			justify-content: space-evenly;
+		}
 	}
 	.readout {
 		display: flex;
@@ -193,9 +229,10 @@
 	}
 	footer {
 		display: flex;
-		justify-content: flex-start;
-		padding: var(--pad);
-		padding-right: 90px;
+		align-items: flex-start;
+		gap: 8px;
+		padding: clamp(8px, 2dvh, var(--pad)) var(--pad);
+		padding-right: 84px;
 	}
 	.disclaimer {
 		font-size: 0.8rem;

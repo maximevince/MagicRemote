@@ -113,7 +113,8 @@ const BLOCK_TEXT: Record<BlockReason, string> = {
 	stale: 'No signal',
 	unknown: 'Waiting for camera',
 	'no-lens': 'No lens',
-	'gain-mode': 'Camera in gain mode'
+	'gain-mode': 'Camera in gain mode',
+	playback: 'In playback'
 };
 
 export const blockText = (r: BlockReason): string => BLOCK_TEXT[r];

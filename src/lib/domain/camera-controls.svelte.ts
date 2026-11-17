@@ -52,7 +52,8 @@ export type BlockReason =
 	| 'stale'
 	| 'unknown'
 	| 'no-lens'
-	| 'gain-mode';
+	| 'gain-mode'
+	| 'playback';
 
 export type LinkStatus = 'ready' | 'standby' | 'reconnecting' | 'offline';
 
@@ -91,6 +92,11 @@ export interface ControlsDeps {
 	live(): boolean;
 	/** A resync is running. */
 	syncing(): boolean;
+	/**
+	 * The camera is in (or switching to or from) clip playback. Exposure, colour and lens writes
+	 * would change the live camera, which nobody sees while a clip plays, so they are blocked.
+	 */
+	playback?(): boolean;
 	/** Queue a write on the normal lane; resolves on the camera's write acknowledgement. */
 	send(write: ControlWrite): Promise<void>;
 	now?: () => number;
@@ -228,6 +234,7 @@ export class CameraControls {
 		if (l !== 'ready') return l;
 		if (this.#deps.syncing()) return 'syncing';
 		if (!this.#deps.live()) return 'stale';
+		if (this.#deps.playback?.()) return 'playback';
 		return null;
 	}
 

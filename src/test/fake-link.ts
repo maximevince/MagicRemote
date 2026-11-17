@@ -5,8 +5,9 @@ import { encode, toHex } from '../lib/protocol/codec.ts';
  * Minimal in-memory CameraLink for domain tests. Not a camera simulator: it records what the
  * session does and lets the test decide every outcome and every notification. Two camera habits
  * are built in because the session depends on them: a Camera Status 0x01 write makes it resend
- * `powerOnBurst`, and (with `recordBehaviour: 'camera'`) a record write is echoed by 10.1 only
- * when the transport mode changes.
+ * `powerOnBurst`, and (with `recordBehaviour: 'camera'`) a 10.1 write is echoed by 10.1 only
+ * when the transport state (mode, and with `speed`/`flags` set also speed and flags) changes.
+ * 10.2 clip steps are never reported; they are counted in `clipSteps`.
  */
 
 export interface TimedNotification {
@@ -55,6 +56,13 @@ export class FakeLink implements CameraLink {
 	powerOnBurst: readonly TimedNotification[] = [];
 	/** The camera's transport mode; the 10.1 reports in `powerOnBurst` carry it. null: as recorded. */
 	mode: number | null = null;
+	/** The camera's playback speed and 10.1 flags, tracked like `mode` when not null. */
+	speed: number | null = null;
+	flags: number | null = null;
+	/** 'all': a 10.1 write sets every field it carries. 'mode-only': speed and flags in writes are ignored. */
+	transportFields: 'all' | 'mode-only' = 'all';
+	/** 10.2 values received, in order (0 previous, 1 next). */
+	readonly clipSteps: number[] = [];
 	/**
 	 * 'manual': record writes are only acked (tests use `onWrite`). 'camera': the mode follows the
 	 * write and 10.1 is echoed only on a change. 'ignore': acked, mode unchanged, no echo.
@@ -170,18 +178,43 @@ export class FakeLink implements CameraLink {
 			for (const e of this.powerOnBurst) this.#later(e.at, () => this.emit(e.ch, this.#withMode(e.bytes)));
 			return;
 		}
+		if (ch === 'outgoing' && data[4] === 10 && data[5] === 2) {
+			this.clipSteps.push(data[8]);
+			return;
+		}
 		const isRecord = ch === 'outgoing' && data[4] === 10 && data[5] === 1;
 		if (!isRecord || this.recordBehaviour === 'manual' || this.recordBehaviour === 'ignore') return;
+		const count = data[1] - 4;
 		const target = data[8];
-		if (target === this.mode) return;
+		let changed = target !== this.mode;
 		this.mode = target;
-		this.#later(this.echoDelayMs, () => this.emit('incoming', FakeLink.transportReport(target)));
+		if (this.transportFields === 'all') {
+			const int8 = (b: number) => (b > 127 ? b - 256 : b);
+			if (count >= 2 && this.speed !== null && int8(data[9]) !== this.speed) {
+				this.speed = int8(data[9]);
+				changed = true;
+			}
+			if (count >= 3 && this.flags !== null && data[10] !== this.flags) {
+				this.flags = data[10];
+				changed = true;
+			}
+		}
+		if (!changed) return;
+		const report = this.#currentReport();
+		this.#later(this.echoDelayMs, () => this.emit('incoming', report));
+	}
+
+	/** The 10.1 report for the tracked state. */
+	#currentReport(): Uint8Array {
+		return FakeLink.transportReport(this.mode ?? 0, [this.speed ?? 0, this.flags ?? 16, 0, 1, 3]);
 	}
 
 	#withMode(bytes: Uint8Array): Uint8Array {
 		if (this.mode === null || bytes[4] !== 10 || bytes[5] !== 1) return bytes;
 		const out = new Uint8Array(bytes);
 		out[8] = this.mode;
+		if (this.speed !== null) out[9] = this.speed & 0xff;
+		if (this.flags !== null) out[10] = this.flags;
 		return out;
 	}
 

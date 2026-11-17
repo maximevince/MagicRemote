@@ -14,6 +14,7 @@ import { CameraState } from './camera-state.svelte.ts';
 import { CameraControls, type ControlsConfig, type ControlWrite, type LinkStatus } from './camera-controls.svelte.ts';
 import { cameraKey, type KnownCameraStore } from './known-cameras.ts';
 import { PacketLog } from './packet-log.svelte.ts';
+import { PlaybackController, type PlaybackConfig, type PlaybackWrite } from './playback-controller.svelte.ts';
 import { RecordController, type RecordConfig } from './record-controller.svelte.ts';
 
 /**
@@ -97,6 +98,7 @@ export interface SessionConfig {
 	knownProtocolMajors: readonly string[];
 	record?: Partial<RecordConfig>;
 	controls?: Partial<ControlsConfig>;
+	playback?: Partial<PlaybackConfig>;
 }
 
 export const DEFAULT_SESSION_CONFIG: SessionConfig = {
@@ -173,6 +175,7 @@ export class CameraSession {
 	readonly state = new CameraState();
 	readonly record: RecordController;
 	readonly controls: CameraControls;
+	readonly playback: PlaybackController;
 	readonly log: PacketLog;
 	readonly queue: GattQueue;
 
@@ -245,9 +248,21 @@ export class CameraSession {
 			link: () => this.#linkStatus(),
 			live: () => this.live,
 			syncing: () => this.syncing,
+			playback: () => this.playback.active,
 			send: (w) => this.#sendControl(w),
 			now: this.#now,
 			config: this.config.controls
+		});
+		this.playback = new PlaybackController({
+			state: this.state,
+			connected: () => this.phase === 'ready',
+			live: () => this.live,
+			syncing: () => this.syncing,
+			record: () => this.record.display,
+			resync: (after) => this.resync('playback', { after }),
+			send: (w) => this.#sendPlayback(w),
+			now: this.#now,
+			config: this.config.playback
 		});
 	}
 
@@ -321,6 +336,7 @@ export class CameraSession {
 		this.queue.flush('user');
 		this.record.linkLost();
 		this.controls.linkLost();
+		this.playback.linkLost();
 		this.state.invalidate();
 		this.phase = 'disconnected';
 		this.step = null;
@@ -705,6 +721,7 @@ export class CameraSession {
 			if (r.key === 'media.transportMode') {
 				this.#seenTransport = true;
 				this.record.onTransport(p.values as number[]);
+				this.playback.onTransport(p.values as number[]);
 				this.#syncCheck?.();
 			}
 		}
@@ -804,6 +821,7 @@ export class CameraSession {
 		this.state.invalidate();
 		this.record.linkLost();
 		this.controls.linkLost();
+		this.playback.linkLost();
 		// A running attempt sees its operation fail and decides; otherwise recover from here.
 		if (!this.#busy && (this.phase === 'ready' || this.phase === 'standby')) this.#startReconnect();
 	}
@@ -925,6 +943,28 @@ export class CameraSession {
 				// Queued for a connection that is gone: never replayed on the next one.
 				if (token !== this.#conn) throw new Superseded();
 				const bytes = w.build(ctx.deltas);
+				this.log.outgoing(bytes, w.label);
+				await link.write('outgoing', bytes);
+			}
+		});
+	}
+
+	/**
+	 * Playback: normal lane, never coalesced (a clip step is relative), built when the queue sends
+	 * it so a 10.1 write carries the latest report. Never replayed on a later connection.
+	 */
+	#sendPlayback(w: PlaybackWrite): Promise<void> {
+		const link = this.#link;
+		if (!link || this.phase !== 'ready' || !this.#linkUp) {
+			return Promise.reject(new LinkError('disconnected', 'not connected'));
+		}
+		const token = this.#conn;
+		return this.queue.push({
+			label: w.label,
+			lane: 'normal',
+			run: async () => {
+				if (token !== this.#conn) throw new Superseded();
+				const bytes = w.build();
 				this.log.outgoing(bytes, w.label);
 				await link.write('outgoing', bytes);
 			}
