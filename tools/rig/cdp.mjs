@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Drive the Chromium on the rig over the DevTools protocol (port forwarded to localhost).
-//   cdp.mjs shot out.png            screenshot of the app page
+//   cdp.mjs shot out.png [WxH]      screenshot of the app page, optionally at another viewport size
 //   cdp.mjs text                    visible text of the page
 //   cdp.mjs eval '<js expression>'  evaluate in the page, print the JSON result
 //   cdp.mjs click '<button text>'   real mouse click on the first button whose text contains it
@@ -38,6 +38,14 @@ const evaluate = async (expression) => {
 };
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
+// A "leave site?" prompt (the app guards against dropping a live link) blocks every other command:
+// accept one that is already open, and any that a reload opens.
+listeners.push((m) => {
+	if (m.method === 'Page.javascriptDialogOpening') void send('Page.handleJavaScriptDialog', { accept: true }).catch(() => {});
+});
+await send('Page.enable');
+await Promise.race([send('Page.handleJavaScriptDialog', { accept: true }).catch(() => {}), sleep(500)]);
+
 async function click(label) {
 	const pos = await evaluate(`(() => {
 		const b = [...document.querySelectorAll('button')].find((b) => b.textContent.trim().includes(${JSON.stringify(label)}) && !b.disabled);
@@ -51,6 +59,12 @@ async function click(label) {
 }
 
 if (cmd === 'shot') {
+	if (arg2) {
+		// Lay the page out at another viewport size for this screenshot only.
+		const [width, height] = arg2.split('x').map(Number);
+		await send('Emulation.setDeviceMetricsOverride', { width, height, deviceScaleFactor: 1, mobile: false });
+		await new Promise((r) => setTimeout(r, 300));
+	}
 	const { data } = await send('Page.captureScreenshot', { format: 'png' });
 	writeFileSync(arg, Buffer.from(data, 'base64'));
 	console.log(`wrote ${arg}`);
