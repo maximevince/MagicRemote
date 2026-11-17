@@ -36,6 +36,8 @@ export default defineConfig({
 			},
 			adapter: adapter({ fallback: '404.html' }),
 			paths: { base },
+			// Registered by #lib/platform/updates (production builds only), which owns the update flow.
+			serviceWorker: { register: false }
 		})
 	],
 	ssr: {
