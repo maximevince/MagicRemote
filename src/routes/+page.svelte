@@ -43,14 +43,6 @@
 	// A new app version must not take over while a camera is connected.
 	$effect(() => (connected ? updates.hold('camera connected') : undefined));
 
-	// A reload or navigation drops the Bluetooth link.
-	$effect(() => {
-		if (!connected) return;
-		const guard = (e: BeforeUnloadEvent) => e.preventDefault();
-		window.addEventListener('beforeunload', guard);
-		return () => window.removeEventListener('beforeunload', guard);
-	});
-
 	// Notifications may have been missed while the tab was in the background.
 	$effect(() => {
 		const s = session;
