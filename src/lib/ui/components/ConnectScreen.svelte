@@ -2,6 +2,7 @@
 	import type { CameraSession, HandshakeStep } from '#lib/domain/camera-session.svelte.ts';
 	import HelpDialog from '#lib/ui/components/HelpDialog.svelte';
 	import Logo from '#lib/ui/components/Logo.svelte';
+	import SupportLink from '#lib/ui/components/SupportLink.svelte';
 	import type { Os } from '#lib/platform/detect.ts';
 	import { VERSION_LABEL } from '#lib/platform/version.ts';
 	import {
@@ -31,6 +32,8 @@
 	const failure = $derived(session.failure);
 	const text = $derived(failure ? failureText(failure, os) : null);
 	const stepIndex = $derived(session.step ? STEPS.indexOf(session.step) : -1);
+	/** The start screen: nothing in progress, no re-pairing flow open. */
+	const splash = $derived(!inProgress && !preparing && session.phase !== 'bond-stale');
 	/** After the user's own Disconnect (or Cancel): no failure attached. */
 	const note = $derived(session.phase === 'disconnected' && !failure ? disconnectNote(os) : null);
 
@@ -59,9 +62,9 @@
 	}
 </script>
 
-<section class="connect">
+<section class="connect" class:splash>
 	<header>
-		<h1><Logo size={44} /></h1>
+		{#if !splash}<h1><Logo size={44} /></h1>{/if}
 		<button class="help" aria-label="Help" aria-haspopup="dialog" onclick={() => (help = true)}>?</button>
 	</header>
 
@@ -131,21 +134,29 @@
 			</div>
 		</div>
 	{:else}
-		{#if note}
-			<p class="note" role="status">
-				Disconnected. This computer may still hold the Bluetooth link.
-				<button class="link" onclick={() => (help = true)}>Free the camera</button>
+		<div class="hero">
+			<h1 class="name"><Logo size={64} /></h1>
+			<p class="tag">Remote control for Blackmagic cinema cameras, over Bluetooth.</p>
+			<p class="desc">
+				Start and stop recording, set ISO, shutter, iris, white balance and focus, and play back clips,
+				with timecode, battery and media always in view. Free, open-source, and fully in your browser:
+				nothing to install.
 			</p>
-		{/if}
-		{#if text && failure?.kind !== 'bond-stale'}
-			<div class="card" class:error={failure?.kind !== 'chooser-cancelled'} role="alert">
-				<h2>{text.title}</h2>
-				<p>{text.body}</p>
-				{#if failure?.detail && failure.kind !== 'unexpected'}<p class="detail">{failure.detail}</p>{/if}
-			</div>
-		{/if}
-		<div class="card">
-			<p>Turn on the camera and enable Bluetooth in its setup menu.</p>
+		</div>
+		<div class="start">
+			{#if note}
+				<p class="note" role="status">
+					Disconnected. This computer may still hold the Bluetooth link.
+					<button class="link" onclick={() => (help = true)}>Free the camera</button>
+				</p>
+			{/if}
+			{#if text && failure?.kind !== 'bond-stale'}
+				<div class="card" class:error={failure?.kind !== 'chooser-cancelled'} role="alert">
+					<h2>{text.title}</h2>
+					<p>{text.body}</p>
+					{#if failure?.detail && failure.kind !== 'unexpected'}<p class="detail">{failure.detail}</p>{/if}
+				</div>
+			{/if}
 			<div class="actions">
 				{#if session.hasDevice}
 					<button class="primary" onclick={() => start(true)}>Connect again</button>
@@ -154,9 +165,13 @@
 					<button class="primary" onclick={() => start(false)}>Connect a camera</button>
 				{/if}
 			</div>
-			<p class="first-time">
+			<p class="ready">
+				Turn on the camera and enable Bluetooth in its setup menu.
 				<button class="link" onclick={() => (help = true)}>First time connecting?</button>
 			</p>
+			<div class="bmc-row">
+				<SupportLink center />
+			</div>
 		</div>
 	{/if}
 
@@ -185,6 +200,7 @@
 		font-size: 1.5rem;
 	}
 	.help {
+		margin-left: auto;
 		width: 44px;
 		height: 44px;
 		padding: 0;
@@ -245,9 +261,6 @@
 	.hint {
 		color: var(--text-dim);
 	}
-	.card p.first-time {
-		margin: 8px 0 0;
-	}
 	.detail {
 		font-family: var(--mono);
 		font-size: 0.85rem;
@@ -268,6 +281,126 @@
 	.steps li.current {
 		color: var(--text);
 		font-weight: 600;
+	}
+	/* Start screen: one centred column, with the help button in the window corner. */
+	.connect.splash {
+		position: relative;
+		flex: 1;
+		width: 100%;
+		max-width: none;
+		gap: 0;
+		padding-top: calc(44px + 2 * var(--pad));
+	}
+	.connect.splash > header {
+		position: absolute;
+		top: var(--pad);
+		right: var(--pad);
+		margin: 0;
+	}
+	.hero,
+	.start {
+		width: 100%;
+		max-width: 27rem;
+		margin-inline: auto;
+		text-align: center;
+	}
+	.hero {
+		margin-top: auto;
+	}
+	.hero .name {
+		display: flex;
+		justify-content: center;
+		font-size: clamp(1.5rem, 8vw, 2rem);
+	}
+	.tag {
+		margin: 16px 0 0;
+		font-weight: 600;
+		text-wrap: balance;
+	}
+	.desc {
+		margin: 10px 0 0;
+		color: var(--text-dim);
+		font-size: 0.92rem;
+		line-height: 1.6;
+		text-wrap: pretty;
+	}
+	.start {
+		margin-top: 28px;
+		margin-bottom: auto;
+	}
+	.start > .note,
+	.start > .card {
+		margin-bottom: var(--gap);
+		text-align: left;
+	}
+	.start .actions {
+		justify-content: center;
+	}
+	.start .primary {
+		padding: 0.7rem 1.6rem;
+		font-weight: 700;
+	}
+	.ready {
+		margin: 14px 0 0;
+		color: var(--text-dim);
+		font-size: 0.85rem;
+		line-height: 1.5;
+		text-wrap: balance;
+	}
+	.ready .link {
+		padding: 0;
+		font-size: inherit;
+	}
+	.bmc-row {
+		margin-top: 28px;
+		padding-top: 20px;
+		border-top: 1px solid var(--border);
+	}
+	.connect.splash > .version {
+		margin-top: 24px;
+	}
+	/* Short windows: tighter, so the buttons stay on screen. */
+	@media (max-height: 520px) {
+		.connect.splash {
+			padding-top: var(--pad);
+		}
+		.hero .name {
+			font-size: 1.5rem;
+		}
+		.tag {
+			margin-top: 10px;
+		}
+		.desc {
+			margin-top: 6px;
+		}
+		.start,
+		.bmc-row {
+			margin-top: 16px;
+		}
+		.bmc-row {
+			padding-top: 14px;
+		}
+		.connect.splash > .version {
+			margin-top: 12px;
+		}
+	}
+	/* Short and wide (a phone on its side): description on the left, buttons on the right. */
+	@media (max-height: 520px) and (min-width: 600px) {
+		.connect.splash {
+			display: grid;
+			grid-template-columns: minmax(0, 25rem) minmax(0, 19rem);
+			grid-template-rows: 1fr auto;
+			justify-content: center;
+			align-items: center;
+			column-gap: calc(3 * var(--pad));
+		}
+		.connect.splash > .hero,
+		.connect.splash > .start {
+			margin: 0;
+		}
+		.connect.splash > .version {
+			grid-column: 1 / -1;
+		}
 	}
 	.version {
 		margin: 0;

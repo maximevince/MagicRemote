@@ -2,6 +2,7 @@
 	import type { Os } from '#lib/platform/detect.ts';
 	import { VERSION_LABEL } from '#lib/platform/version.ts';
 	import { disconnectNote, pinHint } from '#lib/ui/messages.ts';
+	import SupportLink from '#lib/ui/components/SupportLink.svelte';
 
 	let { os, open = $bindable(false) }: { os: Os; open?: boolean } = $props();
 
@@ -73,6 +74,10 @@
 			{/if}
 		</section>
 
+		<div class="support">
+			<SupportLink />
+		</div>
+
 		<footer>
 			<p>MagicRemote is an independent project, not affiliated with or endorsed by Blackmagic Design.</p>
 			<p class="version">{VERSION_LABEL}</p>
@@ -138,6 +143,9 @@
 		padding: 0;
 		background: none;
 		border-color: transparent;
+	}
+	.support {
+		margin-top: 16px;
 	}
 	footer {
 		margin-top: 16px;
